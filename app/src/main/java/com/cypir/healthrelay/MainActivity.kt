@@ -1,11 +1,17 @@
 package com.cypir.healthrelay
 
+import android.arch.lifecycle.ViewModelProviders
 import android.os.Bundle
 import android.support.design.widget.BottomNavigationView
 import android.support.v7.app.AppCompatActivity
+import com.cypir.healthrelay.viewmodel.MainViewModel
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
+
+    lateinit var vm : MainViewModel
+
+
 
     private val mOnNavigationItemSelectedListener = BottomNavigationView.OnNavigationItemSelectedListener { item ->
         when (item.itemId) {
@@ -28,6 +34,9 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        //initialize the view model
+        vm = ViewModelProviders.of(this).get(MainViewModel::class.java)
 
         // default the fragment to the summary
         val ft = supportFragmentManager.beginTransaction()

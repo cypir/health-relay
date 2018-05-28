@@ -17,6 +17,8 @@ class MainViewModel(application : Application) : AndroidViewModel(application) {
 
     val enabledContacts : LiveData<List<Contact>>
 
+    var status = "Active"
+
     init {
         (application as MainApplication).injector.inject(this)
         enabledContacts = appDb.ContactDao().getEnabledContacts()
