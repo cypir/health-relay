@@ -10,15 +10,15 @@ class MainActivity : AppCompatActivity() {
     private val mOnNavigationItemSelectedListener = BottomNavigationView.OnNavigationItemSelectedListener { item ->
         when (item.itemId) {
             R.id.navigation_home -> {
-                message.setText(R.string.title_home)
+                //message.setText(R.string.title_home)
                 return@OnNavigationItemSelectedListener true
             }
             R.id.navigation_contacts -> {
-                message.setText(R.string.title_contacts)
+                //message.setText(R.string.title_contacts)
                 return@OnNavigationItemSelectedListener true
             }
             R.id.navigation_settings -> {
-                message.setText(R.string.title_settings)
+                //message.setText(R.string.title_settings)
                 return@OnNavigationItemSelectedListener true
             }
         }
@@ -28,6 +28,11 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        // default the fragment to the summary
+        val ft = supportFragmentManager.beginTransaction()
+        ft.add(R.id.fragment_container, SummaryFragment())
+        ft.commit()
 
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener)
     }
