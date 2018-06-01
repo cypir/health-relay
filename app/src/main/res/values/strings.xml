@@ -5,6 +5,8 @@
     <string name="title_settings">Settings</string>
     <string name="settings">Settings</string>
     <string name="contacts">Contacts</string>
+    <string name="channel_name">healthrelaychannel</string>
+    <string name="channel_description">healthrelaydescription</string>
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>

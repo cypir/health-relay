@@ -6,6 +6,10 @@ import android.support.design.widget.BottomNavigationView
 import android.support.v7.app.AppCompatActivity
 import com.cypir.healthrelay.viewmodel.MainViewModel
 import kotlinx.android.synthetic.main.activity_main.*
+import android.content.Intent
+import android.os.Build
+import com.cypir.healthrelay.service.RelayService
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -42,6 +46,16 @@ class MainActivity : AppCompatActivity() {
         val ft = supportFragmentManager.beginTransaction()
         ft.add(R.id.fragment_container, SummaryFragment())
         ft.commit()
+
+        //initialize the relay service
+        val intent = Intent(this, RelayService::class.java)
+
+        //start foreground service from android o
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent)
+        } else {
+            startService(intent)
+        }
 
         navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener)
     }
