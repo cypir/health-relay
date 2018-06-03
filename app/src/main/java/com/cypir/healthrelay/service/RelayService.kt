@@ -12,9 +12,13 @@ import com.cypir.healthrelay.AppDatabase
 import javax.inject.Inject
 import android.os.CountDownTimer
 import android.support.v4.app.NotificationCompat
+import android.support.v4.app.NotificationManagerCompat
 import android.text.format.DateUtils
 import android.util.Log
 import com.cypir.healthrelay.MainActivity
+import com.cypir.healthrelay.R
+import java.math.RoundingMode
+import java.text.DecimalFormat
 
 
 /**
@@ -45,7 +49,12 @@ class RelayService : Service(), SensorEventListener {
     private var msRemaining = 0L
 
     //the interval is minutes to MS
-    private val interval = 30 * 60 * 1000L
+    private val interval = 1 * 60 * 1000L
+
+    //store iterations
+    private var iterations = 0
+
+    private lateinit var notificationManager : NotificationManagerCompat
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         //return super.onStartCommand(intent, flags, startId)
@@ -53,7 +62,9 @@ class RelayService : Service(), SensorEventListener {
         sensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
         sensorManager.registerListener(this, sensor, 2 * 1000 * 1000)
 
-        timer = initTimer(timer, interval)
+        initTimer()
+
+        notificationManager =  NotificationManagerCompat.from(this)
 
         startForeground(NOTIFICATION_ID, createNotification())
 
@@ -61,9 +72,17 @@ class RelayService : Service(), SensorEventListener {
     }
 
     override fun onSensorChanged(event: SensorEvent?) {
+
+        val df = DecimalFormat("0.00")
+        df.roundingMode = RoundingMode.DOWN
+
+        val x = df.format(event!!.values[0])
+        val y = df.format(event.values[1])
+        val z = df.format(event.values[2])
+
         //if any values on gyroscope are not equal to 0 (means moving)
-        if(event!!.values[0] != 0f || event.values[1] != 0f || event.values[2] != 0f){
-            timer = initTimer(timer, interval)
+        if((x != "0.00" && x != "-0.00") || (y != "0.00" && y != "-0.00") || (z != "0.00" && z != "-0.00")){
+            initTimer()
         }
 
         //TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
@@ -74,32 +93,34 @@ class RelayService : Service(), SensorEventListener {
     }
 
     //cancel existing timer if necessary and recreate the timer
-    private fun initTimer(timer: CountDownTimer?, interval : Long): CountDownTimer{
+    private fun initTimer(){
         timer?.cancel()
 
-        return object : CountDownTimer(interval, 250) {
+        timer = object : CountDownTimer(interval, 250) {
             override fun onFinish() {
                 //update last tick
                 msRemaining = 0
+                iterations++
 
                 //send SMS
                 Log.d("HealthRelay","The timer has finished and we will send an SMS")
 
-                //updateNotification()
+                timer?.cancel()
+                timer?.start()
             }
 
             //on tick purely meant for showing the countdown timer
             override fun onTick(ms: Long) {
                 msRemaining = ms
                 Log.d("HealthRelay",DateUtils.formatElapsedTime(ms / 1000) + " remaining")
-                //updateNotification()
+                updateNotification()
             }
         }.start()
     }
 
-
     private fun createNotification() : Notification {
         val mBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_record_voice_over_black_24dp)
                 .setContentTitle("Health Relay")
                 .setContentText("Health Relay Active")
 
@@ -116,43 +137,26 @@ class RelayService : Service(), SensorEventListener {
         return mBuilder.build()
     }
 
-//    private fun updateNotification() {
-//
-//        //start with where we currently are
-//        var totalRemainingTime = msRemaining.toFloat()/1000
-//
-//        //go through the rest of the timeslots
-//        totalRemainingTime += (timeslotIndex + 1 until programs[programIndex].timeslots.size)
-//                .map { programs[programIndex].timeslots[it].duration }
-//                .sum()
-//
-//        //go through the next set of programs
-//        for(i in programIndex + 1 until programs.size){
-//            //and all their timeslots
-//            for(k in 0 until programs[i].timeslots.size){
-//                //and add to remaining time
-//                totalRemainingTime += programs[i].timeslots[k].duration
-//            }
-//        }
-//
-//        val intent = Intent(this, CoachingSessionActivity::class.java)
-//        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-//        // resultIntent.putExtra("coachingSessionId",session.id)
-//
-//        //PendingIntent.FLAG_CANCEL_CURRENT resumes activity
-//        val pendingIntent = PendingIntent.getActivity(this, 0, intent,
-//                PendingIntent.FLAG_ONE_SHOT)
-//
-//        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
-//                .setSmallIcon(R.drawable.ic_access_time_black_24dp)
-//                .setContentTitle("Coaching Time")
-//                .setContentText("Time Remaining: " + DateUtils.formatElapsedTime(totalRemainingTime.toLong()))
-//                .setContentIntent(pendingIntent)
-//
-//        notificationManager.notify(
-//                NOTIFICATION_ID,
-//                builder.build())
-//    }
+    private fun updateNotification() {
+
+        val intent = Intent(this, MainActivity::class.java)
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        // resultIntent.putExtra("coachingSessionId",session.id)
+
+        //PendingIntent.FLAG_CANCEL_CURRENT resumes activity
+        val pendingIntent = PendingIntent.getActivity(this, 0, intent,
+                PendingIntent.FLAG_ONE_SHOT)
+
+        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_record_voice_over_black_24dp)
+                .setContentTitle("Health Relay")
+                .setContentText("Iterations: $iterations")
+                .setContentIntent(pendingIntent)
+
+        notificationManager.notify(
+                NOTIFICATION_ID,
+                builder.build())
+    }
 
 
     override fun onBind(intent: Intent?): IBinder? {
