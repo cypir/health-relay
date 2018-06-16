@@ -109,8 +109,6 @@ class RelayService : Service(), SensorEventListener {
                 msRemaining = 0
                 iterations++
 
-                //send SMS
-                Log.d("HealthRelay","The timer has finished and we will send an SMS")
 
                 timer?.cancel()
                 timer?.start()
@@ -119,7 +117,6 @@ class RelayService : Service(), SensorEventListener {
             //on tick purely meant for showing the countdown timer
             override fun onTick(ms: Long) {
                 msRemaining = ms
-                Log.d("HealthRelay",DateUtils.formatElapsedTime(ms / 1000) + " remaining")
                 updateNotification()
             }
         }.start()

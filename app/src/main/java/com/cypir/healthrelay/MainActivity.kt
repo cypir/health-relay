@@ -44,7 +44,7 @@ class MainActivity : AppCompatActivity() {
     @NeedsPermission(Manifest.permission.READ_CONTACTS)
     fun showContacts(){
         val ft = supportFragmentManager.beginTransaction()
-        ft.replace(R.id.fragment_container, ContactFragment())
+        ft.replace(R.id.fragment_container, ContactLookupFragment())
         ft.commit()
     }
 

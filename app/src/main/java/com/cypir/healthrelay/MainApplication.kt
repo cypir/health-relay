@@ -11,12 +11,20 @@ import com.cypir.healthrelay.injection.DaggerInjectorComponent
 import com.cypir.healthrelay.injection.DatabaseModule
 import com.cypir.healthrelay.injection.InjectorComponent
 import com.facebook.stetho.Stetho
+import com.squareup.leakcanary.LeakCanary
 
 class MainApplication : Application() {
     lateinit var injector: InjectorComponent
 
     override fun onCreate() {
         super.onCreate()
+
+        if (LeakCanary.isInAnalyzerProcess(this)) {
+            // This process is dedicated to LeakCanary for heap analysis.
+            // You should not init your app in this process.
+            return
+        }
+        LeakCanary.install(this)
 
         injector = DaggerInjectorComponent.builder()
                 .appModule(AppModule(this))
