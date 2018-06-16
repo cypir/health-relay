@@ -19,6 +19,7 @@ import com.cypir.healthrelay.MainActivity
 import com.cypir.healthrelay.R
 import java.math.RoundingMode
 import java.text.DecimalFormat
+import java.util.*
 
 
 /**
@@ -56,6 +57,8 @@ class RelayService : Service(), SensorEventListener {
 
     private lateinit var notificationManager : NotificationManagerCompat
 
+    private var lastReset = Date()
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         //return super.onStartCommand(intent, flags, startId)
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
@@ -76,12 +79,12 @@ class RelayService : Service(), SensorEventListener {
         val df = DecimalFormat("0.00")
         df.roundingMode = RoundingMode.DOWN
 
-        val x = df.format(event!!.values[0])
-        val y = df.format(event.values[1])
-        val z = df.format(event.values[2])
+        val x = Math.abs(df.format(event!!.values[0]).toDouble())
+        val y = Math.abs(df.format(event.values[1]).toDouble())
+        val z = Math.abs(df.format(event.values[2]).toDouble())
 
         //if any values on gyroscope are not equal to 0 (means moving)
-        if((x != "0.00" && x != "-0.00") || (y != "0.00" && y != "-0.00") || (z != "0.00" && z != "-0.00")){
+        if(x > 0.1 || y > 0.1 || z > 0.1){
             initTimer()
         }
 
@@ -95,6 +98,10 @@ class RelayService : Service(), SensorEventListener {
     //cancel existing timer if necessary and recreate the timer
     private fun initTimer(){
         timer?.cancel()
+        lastReset = Date()
+
+        //reset iterations
+        iterations = 0
 
         timer = object : CountDownTimer(interval, 250) {
             override fun onFinish() {
@@ -150,7 +157,7 @@ class RelayService : Service(), SensorEventListener {
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_record_voice_over_black_24dp)
                 .setContentTitle("Health Relay")
-                .setContentText("Iterations: $iterations")
+                .setContentText("Iterations: $iterations Last Reset: $lastReset")
                 .setContentIntent(pendingIntent)
 
         notificationManager.notify(
