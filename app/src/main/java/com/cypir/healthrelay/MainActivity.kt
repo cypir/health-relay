@@ -30,7 +30,8 @@ class MainActivity : AppCompatActivity() {
             }
             R.id.navigation_contacts -> {
                 //switch to user fragment
-                showContactsWithPermissionCheck()
+                showStoredContacts()
+                //showContactsWithPermissionCheck()
                 return@OnNavigationItemSelectedListener true
             }
             R.id.navigation_settings -> {
@@ -39,6 +40,12 @@ class MainActivity : AppCompatActivity() {
             }
         }
         false
+    }
+
+    fun showStoredContacts() {
+        val ft = supportFragmentManager.beginTransaction()
+        ft.replace(R.id.fragment_container, ContactFragment())
+        ft.commit()
     }
 
     @NeedsPermission(Manifest.permission.READ_CONTACTS)

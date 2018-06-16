@@ -103,7 +103,7 @@ class RelayService : Service(), SensorEventListener {
         //reset iterations
         iterations = 0
 
-        timer = object : CountDownTimer(interval, 250) {
+        timer = object : CountDownTimer(interval, 1000) {
             override fun onFinish() {
                 //update last tick
                 msRemaining = 0
