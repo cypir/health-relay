@@ -25,6 +25,9 @@ import com.cypir.healthrelay.viewmodel.MainViewModel
 import kotlinx.coroutines.experimental.android.UI
 import kotlinx.coroutines.experimental.async
 import org.jetbrains.anko.coroutines.experimental.bg
+import android.content.ContentResolver
+
+
 
 
 /**
@@ -58,8 +61,8 @@ class ContactFragment : Fragment() {
         rv_contacts.layoutManager = LinearLayoutManager(context)
 
         fab_add_contact.setOnClickListener { _ ->
-            val pickContactIntent = Intent(Intent.ACTION_PICK, Uri.parse("content://contacts"))
-            pickContactIntent.type = Phone.CONTENT_TYPE // Show user only contacts w/ phone numbers
+            val pickContactIntent = Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI)
+            pickContactIntent.type = ContactsContract.Contacts.CONTENT_TYPE // Show user only contacts w/ phone numbers
             startActivityForResult(pickContactIntent, PICK_CONTACT_REQUEST)
         }
 
@@ -86,33 +89,60 @@ class ContactFragment : Fragment() {
                 async(UI) {
 
                     val cursor = bg {
-                        activity?.contentResolver?.query(contactUri, projection, null, null, null)
+                        activity?.contentResolver?.query(contactUri, null, null, null, null)
                     }.await()
 
                     cursor?.moveToFirst()
 
+                    val name = cursor?.getString(cursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME))
+                    val id = cursor?.getString(cursor.getColumnIndex(ContactsContract.Contacts._ID))
+
+                    Toast.makeText(activity, "$name $id", Toast.LENGTH_SHORT).show()
+                    Log.d("HealthRelay","$name $id")
+
+                    val contactId = cursor?.getString(cursor.getColumnIndex(ContactsContract.Contacts._ID))
+
+                    val cr = activity?.contentResolver
+
+                    //get all phone information
+                    val phones = cr?.query(Phone.CONTENT_URI, null,
+                            Phone.CONTACT_ID + " = " + contactId, null, null)
+
+                    if(phones != null){
+                        while (phones.moveToNext()) {
+                            val number = phones.getString(phones.getColumnIndex(Phone.NUMBER))
+                            Log.d("HealthRelay",number)
+                        }
+
+                        phones.close()
+                    }
+
+                    //get all email information
+                    val emails = cr?.query(ContactsContract.CommonDataKinds.Email.CONTENT_URI, null,
+                            ContactsContract.CommonDataKinds.Email.CONTACT_ID + " = " + contactId, null, null)
+
+                    if(emails != null){
+                        while (emails.moveToNext()) {
+                            val email = emails.getString(emails.getColumnIndex(ContactsContract.CommonDataKinds.Email.ADDRESS))
+                            Log.d("HealthRelay",email)
+                        }
+
+                        emails.close()
+                    }
+
+                    //and then initiate a new activity that lets the user choose which information they want to populate
+
                     // Retrieve the phone number from the NUMBER column
-                    val column = cursor?.getColumnIndex(Phone.NUMBER)
-                    val number = cursor?.getString(column!!)
-
-                    val name = cursor?.getString(cursor.getColumnIndex(Phone.DISPLAY_NAME))
-                    val id = cursor?.getString(cursor.getColumnIndex(Phone.CONTACT_ID))
-
-                    Toast.makeText(activity, "$number $name", Toast.LENGTH_SHORT).show()
 
                     cursor?.close()
 
-                    bg{
-
-                        //if the name and number are not null, store into the db
-                        if(name != null && number != null && id != null){
-                            vm.addContact(id=id, name=name, number=number)
-                        }
-
-                    }
+//                    bg{
+//                        //if the name and number are not null, store into the db
+//                        if(name != null && number != null && id != null){
+//                            vm.addContact(id=id, name=name, number=number)
+//                        }
+//                    }
                 }
-
-
             }
         }
     }
