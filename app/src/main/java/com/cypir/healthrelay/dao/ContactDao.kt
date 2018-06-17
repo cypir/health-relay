@@ -13,8 +13,8 @@ import com.cypir.healthrelay.entity.Contact
 @Dao
 interface ContactDao {
     @Transaction
-    @Query("SELECT * from Contact where enabled = 1")
-    fun getEnabledContacts() : LiveData<List<Contact>>
+    @Query("SELECT * from Contact")
+    fun getContacts() : LiveData<List<Contact>>
 
     @Transaction
     @Query("SELECT * from Contact")

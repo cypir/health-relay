@@ -14,7 +14,17 @@ import android.app.Activity
 import android.R.attr.data
 import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.R.attr.data
+import android.arch.lifecycle.Observer
+import android.arch.lifecycle.ViewModelProviders
 import android.net.Uri
+import android.support.v7.widget.LinearLayoutManager
+import android.util.Log
+import com.cypir.healthrelay.adapter.ContactAdapter
+import com.cypir.healthrelay.entity.Contact
+import com.cypir.healthrelay.viewmodel.MainViewModel
+import kotlinx.coroutines.experimental.android.UI
+import kotlinx.coroutines.experimental.async
+import org.jetbrains.anko.coroutines.experimental.bg
 
 
 /**
@@ -23,10 +33,19 @@ import android.net.Uri
  */
 class ContactFragment : Fragment() {
 
-    val PICK_CONTACT_REQUEST = 1
+    private val PICK_CONTACT_REQUEST = 1
+
+    lateinit var vm : MainViewModel
+
+    //initialize adapter to empty
+    lateinit var contactAdapter : ContactAdapter
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
+
+        //initialize the view model
+        vm = ViewModelProviders.of(activity!!).get(MainViewModel::class.java)
+
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_contact, container, false)
     }
@@ -34,11 +53,27 @@ class ContactFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        contactAdapter = ContactAdapter(context!!, arrayListOf())
+        rv_contacts.adapter = contactAdapter
+        rv_contacts.layoutManager = LinearLayoutManager(context)
+
         fab_add_contact.setOnClickListener { _ ->
             val pickContactIntent = Intent(Intent.ACTION_PICK, Uri.parse("content://contacts"))
             pickContactIntent.type = Phone.CONTENT_TYPE // Show user only contacts w/ phone numbers
             startActivityForResult(pickContactIntent, PICK_CONTACT_REQUEST)
         }
+
+        //create listener
+        vm.contacts.observe(this, Observer<List<Contact>> {
+            contacts ->
+                Log.d("HealthRelay",contacts.toString())
+                if(contacts != null){
+                    contactAdapter.contacts = contacts
+
+                    //TODO: use delta/patch diff tool
+                    contactAdapter.notifyDataSetChanged()
+                }
+        })
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -46,33 +81,39 @@ class ContactFragment : Fragment() {
             if(resultCode == Activity.RESULT_OK){
                 val contactUri = data?.data
                 // We only need the NUMBER column, because there will be only one row in the result
-                val projection = arrayOf(Phone.DISPLAY_NAME, Phone.NUMBER)
+                val projection = arrayOf(Phone.DISPLAY_NAME, Phone.NUMBER, Phone.CONTACT_ID)
 
-                // Perform the query on the contact to get the NUMBER column
-                // We don't need a selection or sort order (there's only one result for the given URI)
-                // CAUTION: The query() method should be called from a separate thread to avoid blocking
-                // your app's UI thread. (For simplicity of the sample, this code doesn't do that.)
-                // Consider using CursorLoader to perform the query.
-                val cursor = activity?.contentResolver?.query(contactUri, projection, null, null, null)
-                cursor?.moveToFirst()
+                async(UI) {
 
-                // Retrieve the phone number from the NUMBER column
-                val column = cursor?.getColumnIndex(Phone.NUMBER)
-                val number = cursor?.getString(column!!)
+                    val cursor = bg {
+                        activity?.contentResolver?.query(contactUri, projection, null, null, null)
+                    }.await()
 
-                val name = cursor?.getString(cursor.getColumnIndex(Phone.DISPLAY_NAME))
+                    cursor?.moveToFirst()
 
-                Toast.makeText(activity, "$number $name", Toast.LENGTH_SHORT).show()
+                    // Retrieve the phone number from the NUMBER column
+                    val column = cursor?.getColumnIndex(Phone.NUMBER)
+                    val number = cursor?.getString(column!!)
 
-                cursor?.close()
+                    val name = cursor?.getString(cursor.getColumnIndex(Phone.DISPLAY_NAME))
+                    val id = cursor?.getString(cursor.getColumnIndex(Phone.CONTACT_ID))
+
+                    Toast.makeText(activity, "$number $name", Toast.LENGTH_SHORT).show()
+
+                    cursor?.close()
+
+                    bg{
+
+                        //if the name and number are not null, store into the db
+                        if(name != null && number != null && id != null){
+                            vm.addContact(id=id, name=name, number=number)
+                        }
+
+                    }
+                }
+
+
             }
-//            val contactData = data?.data
-//            val c = getContentResolver().query(contactData, null, null, null, null)
-//            if (c.moveToFirst()) {
-//                val phoneIndex = getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
-//                val num = c.getString(phoneIndex)
-//                Toast.makeText(this@MainActivity, "Number=$num", Toast.LENGTH_LONG).show()
-//            }
         }
     }
 

@@ -17,16 +17,30 @@ class MainViewModel(application : Application) : AndroidViewModel(application) {
     @Inject
     lateinit var appDb : AppDatabase
 
-    val enabledContacts : LiveData<List<Contact>>
+    val contacts : LiveData<List<Contact>>
     val nextCheck: Date
 
     var status = "Active"
 
     init {
         (application as MainApplication).injector.inject(this)
-        enabledContacts = appDb.ContactDao().getEnabledContacts()
+        contacts = appDb.ContactDao().getContacts()
 
         //initialize the next check for the date to
         nextCheck = Date()
+    }
+
+    /**
+     * adds a contact to the db
+     */
+    fun addContact(id: String, name : String, number: String){
+        val contact = Contact(
+                id=id,
+                name=name,
+                number=number
+        )
+
+        //TODO: throw error message if a duplicate add is attempted.
+        appDb.ContactDao().insertContact(contact)
     }
 }

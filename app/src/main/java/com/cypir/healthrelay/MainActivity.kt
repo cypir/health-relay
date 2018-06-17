@@ -15,7 +15,6 @@ import android.widget.Toast
 import com.cypir.healthrelay.service.RelayService
 import permissions.dispatcher.*
 
-@RuntimePermissions
 class MainActivity : AppCompatActivity() {
 
     lateinit var vm : MainViewModel
@@ -42,43 +41,10 @@ class MainActivity : AppCompatActivity() {
         false
     }
 
-    fun showStoredContacts() {
+    private fun showStoredContacts() {
         val ft = supportFragmentManager.beginTransaction()
         ft.replace(R.id.fragment_container, ContactFragment())
         ft.commit()
-    }
-
-    @NeedsPermission(Manifest.permission.READ_CONTACTS)
-    fun showContacts(){
-        val ft = supportFragmentManager.beginTransaction()
-        ft.replace(R.id.fragment_container, ContactLookupFragment())
-        ft.commit()
-    }
-
-    @OnShowRationale(Manifest.permission.READ_CONTACTS)
-    fun showRationaleForContacts(request: PermissionRequest) {
-        // NOTE: Show a rationale to explain why the permission is needed, e.g. with a dialog.
-        // Call proceed() or cancel() on the provided PermissionRequest to continue or abort
-        showRationaleDialog(R.string.permission_contacts_rationale, request)
-    }
-
-    @OnPermissionDenied(Manifest.permission.READ_CONTACTS)
-    fun onCameraDenied() {
-        Toast.makeText(this, "You dare deny the contacts", Toast.LENGTH_SHORT).show()
-    }
-
-    @OnNeverAskAgain(Manifest.permission.READ_CONTACTS)
-    fun onCameraNeverAskAgain() {
-        Toast.makeText(this, "You dare deny the contacts... FOREVER?", Toast.LENGTH_SHORT).show()
-    }
-
-    fun showRationaleDialog(@StringRes messageResId: Int, request: PermissionRequest) {
-        AlertDialog.Builder(this)
-                .setPositiveButton(R.string.button_allow) { _, _ -> request.proceed() }
-                .setNegativeButton(R.string.button_deny) { _, _ -> request.cancel() }
-                .setCancelable(false)
-                .setMessage(messageResId)
-                .show()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

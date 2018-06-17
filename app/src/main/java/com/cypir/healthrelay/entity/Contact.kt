@@ -7,19 +7,14 @@ import android.arch.persistence.room.PrimaryKey
 @Entity(
         tableName = "Contact")
 data class Contact(
-        @PrimaryKey(autoGenerate = true)
-        val id : Long = 0,
 
-        @ColumnInfo(name="first_name")
-        val firstName : String,
+        //make this the contact id
+        @PrimaryKey
+        val id : String = "",
 
-        @ColumnInfo(name="last_name")
-        val lastName : String,
+        @ColumnInfo(name="name")
+        val name : String,
 
-        @ColumnInfo(name="phone_number")
-        val phoneNumber : String,
-
-        @ColumnInfo(name="enabled")
-        val enabled : Boolean
-
+        @ColumnInfo(name="number")
+        val number : String
 )
