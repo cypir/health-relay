@@ -1,5 +1,6 @@
 package com.cypir.healthrelay
 
+import android.content.ContentResolver
 import android.net.Uri
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
@@ -7,6 +8,7 @@ import android.provider.ContactsContract
 import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.provider.ContactsContract.CommonDataKinds.Email
 import android.support.v7.widget.LinearLayoutManager
+import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.widget.Toast
 import com.cypir.healthrelay.adapter.AddContactAdapter
@@ -56,49 +58,14 @@ class AddContactActivity : AppCompatActivity() {
 
             val cr = this@AddContactActivity.contentResolver
 
-            //get all phone information
-            val phones = cr.query(Phone.CONTENT_URI, null,
-                    Phone.CONTACT_ID + " = " + contactId, null, null)
-
-            val phonesList = arrayListOf<String>()
-
-            if(phones != null){
-                while (phones.moveToNext()) {
-                    val number = phones.getString(phones.getColumnIndex(Phone.NUMBER))
-                    phonesList.add(number)
-                    Log.d("HealthRelay",number)
-                }
-
-                phones.close()
-            }
-
-            phoneAdapter.contactInfos = phonesList
-            phoneAdapter.notifyDataSetChanged()
-
-            //get all email information
-            val emails = cr?.query(ContactsContract.CommonDataKinds.Email.CONTENT_URI, null,
-                    ContactsContract.CommonDataKinds.Email.CONTACT_ID + " = " + contactId, null, null)
-
-            val emailsList = arrayListOf<String>()
-
-            if(emails != null){
-                while (emails.moveToNext()) {
-                    val email = emails.getString(emails.getColumnIndex(ContactsContract.CommonDataKinds.Email.ADDRESS))
-                    emailsList.add(email)
-                    Log.d("HealthRelay",email)
-                }
-
-                emails.close()
-            }
-
-            emailAdapter.contactInfos = emailsList
-            emailAdapter.notifyDataSetChanged()
+            setAdapterList(Phone.CONTENT_URI, cr, Phone.NUMBER, contactId!!, phoneAdapter)
+            setAdapterList(Email.CONTENT_URI, cr, Email.ADDRESS, contactId, emailAdapter)
 
             //and then initiate a new activity that lets the user choose which information they want to populate
 
             // Retrieve the phone number from the NUMBER column
 
-            cursor?.close()
+            cursor.close()
 
 //                    bg{
 //                        //if the name and number are not null, store into the db
@@ -106,6 +73,26 @@ class AddContactActivity : AppCompatActivity() {
 //                            vm.addContact(id=id, name=name, number=number)
 //                        }
       }
+    }
+
+    private fun setAdapterList(uri : Uri, cr: ContentResolver, columnIndex : String, contactId : String, adapter : AddContactAdapter) {
+        val infos = cr.query(uri, null,
+                Phone.CONTACT_ID + " = " + contactId, null, null)
+
+        val infosList = arrayListOf<String>()
+
+        if(infos != null){
+            while (infos.moveToNext()) {
+                val info = infos.getString(infos.getColumnIndex(columnIndex))
+                infosList.add(info)
+                Log.d("HealthRelay",info)
+            }
+
+            infos.close()
+        }
+
+        adapter.contactInfos = infosList
+        adapter.notifyDataSetChanged()
     }
 
 }
