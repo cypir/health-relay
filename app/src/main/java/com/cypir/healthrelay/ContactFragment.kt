@@ -82,67 +82,12 @@ class ContactFragment : Fragment() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if(requestCode == PICK_CONTACT_REQUEST){
             if(resultCode == Activity.RESULT_OK){
-                val contactUri = data?.data
-                // We only need the NUMBER column, because there will be only one row in the result
-                val projection = arrayOf(Phone.DISPLAY_NAME, Phone.NUMBER, Phone.CONTACT_ID)
 
-                async(UI) {
-
-                    val cursor = bg {
-                        activity?.contentResolver?.query(contactUri, null, null, null, null)
-                    }.await()
-
-                    cursor?.moveToFirst()
-
-                    val name = cursor?.getString(cursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME))
-                    val id = cursor?.getString(cursor.getColumnIndex(ContactsContract.Contacts._ID))
-
-                    Toast.makeText(activity, "$name $id", Toast.LENGTH_SHORT).show()
-                    Log.d("HealthRelay","$name $id")
-
-                    val contactId = cursor?.getString(cursor.getColumnIndex(ContactsContract.Contacts._ID))
-
-                    val cr = activity?.contentResolver
-
-                    //get all phone information
-                    val phones = cr?.query(Phone.CONTENT_URI, null,
-                            Phone.CONTACT_ID + " = " + contactId, null, null)
-
-                    if(phones != null){
-                        while (phones.moveToNext()) {
-                            val number = phones.getString(phones.getColumnIndex(Phone.NUMBER))
-                            Log.d("HealthRelay",number)
-                        }
-
-                        phones.close()
-                    }
-
-                    //get all email information
-                    val emails = cr?.query(ContactsContract.CommonDataKinds.Email.CONTENT_URI, null,
-                            ContactsContract.CommonDataKinds.Email.CONTACT_ID + " = " + contactId, null, null)
-
-                    if(emails != null){
-                        while (emails.moveToNext()) {
-                            val email = emails.getString(emails.getColumnIndex(ContactsContract.CommonDataKinds.Email.ADDRESS))
-                            Log.d("HealthRelay",email)
-                        }
-
-                        emails.close()
-                    }
-
-                    //and then initiate a new activity that lets the user choose which information they want to populate
-
-                    // Retrieve the phone number from the NUMBER column
-
-                    cursor?.close()
-
-//                    bg{
-//                        //if the name and number are not null, store into the db
-//                        if(name != null && number != null && id != null){
-//                            vm.addContact(id=id, name=name, number=number)
-//                        }
-//                    }
-                }
+                //when we receive the response from the contact picker activity, we then initiate our own
+                //dialog which allows the user to select the particular contact information they want for this user.
+                val intent = Intent(context, AddContactActivity::class.java)
+                intent.putExtra("contactUri", data?.data)
+                startActivity(intent)
             }
         }
     }
