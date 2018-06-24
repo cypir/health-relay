@@ -26,7 +26,6 @@ class ContactAdapter(var context: Context, var contacts: List<Contact>) : Recycl
 
     override fun onBindViewHolder(holder: ContactHolder, position: Int) {
         holder.name.text = contacts[position].name
-        holder.number.text = contacts[position].number
     }
 
     //Holds the item information

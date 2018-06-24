@@ -13,4 +13,5 @@
     <string name="button_allow">Allow</string>
     <string name="button_deny">Deny</string>
     <string name="permission_contacts_rationale">Contacts are required for sending SMS</string>
+    <string name="save">save</string>
 </resources>

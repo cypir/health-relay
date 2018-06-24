@@ -2,10 +2,15 @@ package com.cypir.healthrelay.entity
 
 import android.arch.persistence.room.ColumnInfo
 import android.arch.persistence.room.Entity
+import android.arch.persistence.room.ForeignKey
 import android.arch.persistence.room.PrimaryKey
 
+/**
+ * One Contact has many ContactInfo children.
+ */
 @Entity(
-        tableName = "Contact")
+        tableName = "Contact"
+)
 data class Contact(
 
         //make this the contact id
@@ -13,8 +18,5 @@ data class Contact(
         val id : String = "",
 
         @ColumnInfo(name="name")
-        val name : String,
-
-        @ColumnInfo(name="number")
-        val number : String
+        val name : String
 )

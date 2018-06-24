@@ -24,7 +24,7 @@ class MainViewModel(application : Application) : AndroidViewModel(application) {
 
     init {
         (application as MainApplication).injector.inject(this)
-        contacts = appDb.ContactDao().getContacts()
+        contacts = appDb.contactDao().getContacts()
 
         //initialize the next check for the date to
         nextCheck = Date()
@@ -36,11 +36,10 @@ class MainViewModel(application : Application) : AndroidViewModel(application) {
     fun addContact(id: String, name : String, number: String){
         val contact = Contact(
                 id=id,
-                name=name,
-                number=number
+                name=name
         )
 
         //TODO: throw error message if a duplicate add is attempted.
-        appDb.ContactDao().insertContact(contact)
+        appDb.contactDao().insertContact(contact)
     }
 }
