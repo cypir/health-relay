@@ -20,7 +20,7 @@ import android.arch.persistence.room.PrimaryKey
     )
 )
 data class ContactInfo (
-        //make this the contact id
+        //unique id column for contact info
         @PrimaryKey
         val id : String,
 
@@ -28,10 +28,7 @@ data class ContactInfo (
         @ColumnInfo(name="type")
         val type : String,
 
-        //info can be phone number or email address
-        @ColumnInfo(name="info")
-        val info : String,
-
+        //foreign key to contact
         @ColumnInfo(name="contact_id")
         var contactId : String ?= null
 )
