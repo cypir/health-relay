@@ -31,6 +31,5 @@ class ContactAdapter(var context: Context, var contacts: List<Contact>) : Recycl
     //Holds the item information
     class ContactHolder(v: View) : RecyclerView.ViewHolder(v) {
         val name = v.text_name
-        val number = v.text_number
     }
 }
