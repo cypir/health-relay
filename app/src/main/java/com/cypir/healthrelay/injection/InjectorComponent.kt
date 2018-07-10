@@ -1,7 +1,7 @@
 package com.cypir.healthrelay.injection
 
 import com.cypir.healthrelay.service.RelayService
-import com.cypir.healthrelay.viewmodel.AddContactViewModel
+import com.cypir.healthrelay.viewmodel.ContactDataViewModel
 import com.cypir.healthrelay.viewmodel.MainViewModel
 import dagger.Component
 import javax.inject.Singleton
@@ -20,5 +20,5 @@ import javax.inject.Singleton
 interface InjectorComponent {
         fun inject(vm : MainViewModel)
         fun inject(service : RelayService)
-        fun inject(vm : AddContactViewModel)
+        fun inject(vm : ContactDataViewModel)
 }

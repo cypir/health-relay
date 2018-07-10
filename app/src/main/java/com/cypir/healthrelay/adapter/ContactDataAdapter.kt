@@ -5,22 +5,21 @@ import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import com.cypir.healthrelay.entity.Contact
 import android.view.View
 import com.cypir.healthrelay.R
-import kotlinx.android.synthetic.main.item_add_contact.*
+import com.cypir.healthrelay.entity.ContactData
 import kotlinx.android.synthetic.main.item_add_contact.view.*
 
 /**
- * Adapter for a list of contact info for a particular medium. For example, contactInfo could be
+ * Adapter for a list of contact info for a particular medium. For example, contactData could be
  * a list of email addresses or a list of phone numbers
  */
-class AddContactAdapter(var context: Context, var contactInfo: List<String>) : RecyclerView.Adapter<AddContactAdapter.ContactHolder>() {
+class ContactDataAdapter(var context: Context, var contactData: List<ContactData>) : RecyclerView.Adapter<ContactDataAdapter.ContactHolder>() {
 
     var selectedInfo  = mutableListOf<Boolean>()
 
     fun initialize(){
-        contactInfo.forEach {
+        contactData.forEach {
             selectedInfo.add(false)
         }
     }
@@ -34,25 +33,16 @@ class AddContactAdapter(var context: Context, var contactInfo: List<String>) : R
     }
 
     override fun getItemCount(): Int {
-        return contactInfo.size
+        return contactData.size
     }
-
-//    fun getSelectedContacts(): List<String> {
-//        var ret = mutableListOf<String>()
-//
-//        selectedInfo.forEachIndexed { index, selected ->
-//            if(selected){
-//                //ret.add()
-//            }
-//        }
-//    }
 
     //bind it
     override fun onBindViewHolder(holder: ContactHolder, position: Int) {
-        holder.contact_info.text = contactInfo[position]
+        holder.contact_info.text = contactData[position].info
+        holder.contact_info.isChecked = contactData[position].isEnabled
         holder.contact_info.setOnCheckedChangeListener { buttonView, isChecked ->
-            selectedInfo[position] = isChecked
-            Log.d("HealthRelay","$position")
+            contactData[position].isEnabled = isChecked
+            Log.d("HealthRelay","$contactData")
         }
     }
 

@@ -1,12 +1,9 @@
 package com.cypir.healthrelay.dao
 
 import android.arch.lifecycle.LiveData
-import android.arch.persistence.room.Dao
-import android.arch.persistence.room.Insert
-import android.arch.persistence.room.Query
-import android.arch.persistence.room.Transaction
+import android.arch.persistence.room.*
 import com.cypir.healthrelay.entity.Contact
-import com.cypir.healthrelay.relation.ContactWithContactInfo
+import com.cypir.healthrelay.relation.ContactWithContactData
 
 /**
  * Created by wxz on 11/12/2017.
@@ -27,8 +24,9 @@ interface ContactDao {
 
     @Transaction
     @Query("SELECT * from Contact where id = :id")
-    fun getContactWithContactInfoSync(id : String) : ContactWithContactInfo
+    fun getContactWithContactDataSync(id : String) : ContactWithContactData
 
-    @Insert
+    //if we are trying to insert contact data with an ID that already exists, then ignore it.
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insertContact(contact : Contact) : Long
 }

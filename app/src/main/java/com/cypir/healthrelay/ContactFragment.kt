@@ -8,26 +8,14 @@ import android.view.ViewGroup
 import kotlinx.android.synthetic.main.fragment_contact.*
 import android.provider.ContactsContract
 import android.content.Intent
-import android.widget.Toast
-import android.R.attr.data
 import android.app.Activity
-import android.R.attr.data
-import android.provider.ContactsContract.CommonDataKinds.Phone
-import android.R.attr.data
 import android.arch.lifecycle.Observer
 import android.arch.lifecycle.ViewModelProviders
-import android.net.Uri
 import android.support.v7.widget.LinearLayoutManager
 import android.util.Log
 import com.cypir.healthrelay.adapter.ContactAdapter
 import com.cypir.healthrelay.entity.Contact
 import com.cypir.healthrelay.viewmodel.MainViewModel
-import kotlinx.coroutines.experimental.android.UI
-import kotlinx.coroutines.experimental.async
-import org.jetbrains.anko.coroutines.experimental.bg
-import android.content.ContentResolver
-
-
 
 
 /**
@@ -85,7 +73,7 @@ class ContactFragment : Fragment() {
 
                 //when we receive the response from the contact picker activity, we then initiate our own
                 //dialog which allows the user to select the particular contact information they want for this user.
-                val intent = Intent(context, AddContactActivity::class.java)
+                val intent = Intent(context, ContactDataActivity::class.java)
                 intent.putExtra("contactUri", data?.data)
                 startActivity(intent)
             }
