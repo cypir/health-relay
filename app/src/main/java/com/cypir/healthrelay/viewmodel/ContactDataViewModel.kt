@@ -46,7 +46,7 @@ class ContactDataViewModel(application : Application) : AndroidViewModel(applica
     /**
      * Gets the stored contact info for a particular contact
      */
-    fun getStoredContactInfo(id: String) : ContactWithContactData {
+    fun getStoredContactInfo(id: String) : ContactWithContactData? {
         return appDb.contactDao().getContactWithContactDataSync(id)
     }
 }

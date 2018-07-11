@@ -152,7 +152,7 @@ class ContactDataActivity : AppCompatActivity() {
             //get existing contacts
             val contactWithContactData = bg { vm.getStoredContactInfo(contactId) }.await()
 
-            Log.d("HealthRelay", contactWithContactData.contactData.toString())
+            //Log.d("HealthRelay", contactWithContactData.contactData.toString())
 
             if(info != null){
                 while (info.moveToNext()) {
@@ -161,7 +161,7 @@ class ContactDataActivity : AppCompatActivity() {
                     val id = info.getString(info.getColumnIndex(contactInfoIdCol))
 
                     //set isEnabled to true if our persisted data shows as true
-                    val stored = contactWithContactData.contactData.find {
+                    val stored = contactWithContactData?.contactData?.find {
                         it.id == id
                     }
 
@@ -173,6 +173,8 @@ class ContactDataActivity : AppCompatActivity() {
                 }
 
                 info.close()
+            }else{
+                Log.d("HealthRelay","in the else")
             }
 
             dataAdapter.contactData = infoList
