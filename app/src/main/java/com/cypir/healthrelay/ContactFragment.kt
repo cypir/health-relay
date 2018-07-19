@@ -1,21 +1,23 @@
 package com.cypir.healthrelay
 
+import android.app.Activity
+import android.arch.lifecycle.ViewModelProviders
+import android.content.Intent
 import android.os.Bundle
+import android.provider.ContactsContract
+import android.provider.ContactsContract.Data
 import android.support.v4.app.Fragment
+import android.support.v7.widget.LinearLayoutManager
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import kotlinx.android.synthetic.main.fragment_contact.*
-import android.provider.ContactsContract
-import android.content.Intent
-import android.app.Activity
-import android.arch.lifecycle.Observer
-import android.arch.lifecycle.ViewModelProviders
-import android.support.v7.widget.LinearLayoutManager
-import android.util.Log
 import com.cypir.healthrelay.adapter.ContactAdapter
-import com.cypir.healthrelay.entity.Contact
 import com.cypir.healthrelay.viewmodel.MainViewModel
+import kotlinx.android.synthetic.main.fragment_contact.*
+import kotlinx.coroutines.experimental.android.UI
+import kotlinx.coroutines.experimental.launch
+import org.jetbrains.anko.coroutines.experimental.bg
 
 
 /**
@@ -25,6 +27,7 @@ import com.cypir.healthrelay.viewmodel.MainViewModel
 class ContactFragment : Fragment() {
 
     private val PICK_CONTACT_REQUEST = 1
+    private val HR_NOTIFY_MIMETYPE = "vnd.android.cursor.item/health_relay_notify"
 
     lateinit var vm : MainViewModel
 
@@ -48,6 +51,34 @@ class ContactFragment : Fragment() {
         rv_contacts.adapter = contactAdapter
         rv_contacts.layoutManager = LinearLayoutManager(context)
 
+        //we will group the contact data by lookup_key
+        //we store whether or not a contactcontract.data row is checked via matching the _ID with our
+        //own database
+        launch(UI){
+            try {
+                val c = bg {
+
+                        activity?.contentResolver?.query(
+                                Data.CONTENT_URI,
+                                arrayOf(
+                                        Data.RAW_CONTACT_ID,
+                                        ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME_PRIMARY
+                                ),
+                                Data.MIMETYPE + "=" + "?", arrayOf(HR_NOTIFY_MIMETYPE), null
+                        )
+
+                }.await()
+
+                //iterate through data that has the appropriate mimetype and group by the contact_id.
+
+                //close the cursor
+                c?.close()
+            }catch(ex: Exception){
+                Log.d("HealthRelayError",ex.toString())
+            }
+        }
+
+
         fab_add_contact.setOnClickListener { _ ->
             val pickContactIntent = Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI)
             pickContactIntent.type = ContactsContract.Contacts.CONTENT_TYPE // Show user only contacts w/ phone numbers
@@ -55,16 +86,22 @@ class ContactFragment : Fragment() {
         }
 
         //create listener
-        vm.contacts.observe(this, Observer<List<Contact>> {
-            contacts ->
-                Log.d("HealthRelay",contacts.toString())
-                if(contacts != null){
-                    contactAdapter.contacts = contacts
-
-                    //TODO: use delta/patch diff tool
-                    contactAdapter.notifyDataSetChanged()
-                }
-        })
+        /**
+         * Todo: use content provider to display list of names given a list of ids
+         * adding an id will trigger an observer change, where we then update the cursor
+         * query to include the new id.
+         */
+//        vm.contacts.observe(this, Observer<List<Contact>> {
+//            contacts ->
+//
+//            Log.d("HealthRelay",contacts.toString())
+//            if(contacts != null){
+//                contactAdapter.contacts = contacts
+//
+//                //TODO: use delta/patch diff tool
+//                contactAdapter.notifyDataSetChanged()
+//            }
+//        })
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

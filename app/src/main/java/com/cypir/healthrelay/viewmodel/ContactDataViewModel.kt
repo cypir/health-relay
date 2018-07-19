@@ -2,17 +2,15 @@ package com.cypir.healthrelay.viewmodel
 
 import android.app.Application
 import android.arch.lifecycle.AndroidViewModel
-import android.database.Cursor
-import android.provider.ContactsContract
+import android.util.Log
 import com.cypir.healthrelay.AppDatabase
 import com.cypir.healthrelay.MainApplication
-import com.cypir.healthrelay.entity.Contact
-import com.cypir.healthrelay.entity.ContactData
-import com.cypir.healthrelay.relation.ContactWithContactData
+import com.cypir.healthrelay.entity.HRContactData
 import kotlinx.coroutines.experimental.android.UI
-import kotlinx.coroutines.experimental.async
 import org.jetbrains.anko.coroutines.experimental.bg
 import javax.inject.Inject
+import kotlinx.coroutines.experimental.launch
+
 
 /**
  * Created by wxz on 11/13/2017.
@@ -23,30 +21,48 @@ class ContactDataViewModel(application : Application) : AndroidViewModel(applica
     lateinit var contactId : String
     lateinit var contactName : String
 
+    val MIMETYPE_HRNOTIFY = "vnd.android.cursor.item/health_relay_notify"
+
     init {
         (application as MainApplication).injector.inject(this)
     }
 
     /**
-     * adds a contact to the db. We need to add the contact along with their
-     * information atomically.
+     * uses a custom MIMETYPE to store the relevant notify boolean (whether or not to notify
+     * a particular data set). We only have to update the ContactContract.Data table.
+     * We will query the data table for all entries with the custom mimetype and manually
+     * group by lookupid
      */
-    fun saveContact(list : List<ContactData>){
+    fun saveContact(contactId: String, list : List<HRContactData>){
+
+        //val values = ContentValues()
+        //values.put(ContactsContract.Data.DATA1, if (this.getFormality()) "1" else "0")
+
+        //get only isEnabled contacts to save
+        val toInsert = list.filter { it.isEnabled }
 
         //TODO make this a transaction and and upsert
-        async(UI){
-            bg { appDb.contactDao().insertContact(Contact(id = contactId, name=contactName)) }.await()
+        launch(UI){
+            //bg { appDb.contactDao().insertContact(Contact(id = contactId, name=contactName)) }.await()
             bg {
-                appDb.contactDataDao().insertContactData(list)
+                //insert only contacts that are enabled
+                appDb.contactDataDao().insertContactData(toInsert)
             }.await()
         }
-
     }
 
     /**
      * Gets the stored contact info for a particular contact
      */
-    fun getStoredContactInfo(id: String) : ContactWithContactData? {
-        return appDb.contactDao().getContactWithContactDataSync(id)
+    fun getHRContactData(id: String) : List<HRContactData>?{
+        val list : List<HRContactData>? = try{
+            appDb.contactDataDao().getHRContactDataByContactId(id)
+        }catch(ex : Exception){
+            Log.d("HealthRelay","Ran into an error")
+            null
+        }
+
+        return list
+
     }
 }

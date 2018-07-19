@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.provider.ContactsContract
 import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.provider.ContactsContract.CommonDataKinds.Email
+import android.provider.ContactsContract.Data
 import android.support.v7.widget.LinearLayoutManager
 import android.util.Log
 import android.view.Menu
@@ -15,12 +16,13 @@ import android.view.MenuItem
 import android.widget.Toast
 import com.cypir.healthrelay.adapter.ContactDataAdapter
 import com.cypir.healthrelay.viewmodel.ContactDataViewModel
-import kotlinx.android.synthetic.main.activity_contact_data.*
 import kotlinx.coroutines.experimental.android.UI
 import kotlinx.coroutines.experimental.async
 import org.jetbrains.anko.coroutines.experimental.bg
-import com.cypir.healthrelay.entity.ContactData
-import kotlinx.android.synthetic.main.activity_contact_data.text_name
+import com.cypir.healthrelay.entity.HRContactData
+import kotlinx.android.synthetic.main.activity_contact_data.*
+import kotlinx.coroutines.experimental.Deferred
+import kotlinx.coroutines.experimental.launch
 
 
 class ContactDataActivity : AppCompatActivity() {
@@ -39,7 +41,7 @@ class ContactDataActivity : AppCompatActivity() {
         val extras = intent.extras
         val contactUri = extras.getParcelable<Uri>("contactUri")
 
-        //initialize adapters
+        //initialize empty adapters
         phoneDataAdapter = ContactDataAdapter(this@ContactDataActivity, arrayListOf())
         rv_phone_numbers.adapter = phoneDataAdapter
         rv_phone_numbers.layoutManager = LinearLayoutManager(this@ContactDataActivity)
@@ -48,15 +50,14 @@ class ContactDataActivity : AppCompatActivity() {
         rv_email_addresses.adapter = emailDataAdapter
         rv_email_addresses.layoutManager = LinearLayoutManager(this@ContactDataActivity)
 
-        text_name.text = ""
+        launch(UI) {
 
-        async(UI) {
-
+            //gets contact cursor
             val cursor = bg {
                 this@ContactDataActivity.contentResolver?.query(contactUri, null, null, null, null)
             }.await()
 
-            if(cursor != null){
+            if(cursor != null) {
                 cursor.moveToFirst()
 
                 vm.contactName = cursor.getString(cursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME))
@@ -64,23 +65,19 @@ class ContactDataActivity : AppCompatActivity() {
 
                 vm.contactId = cursor.getString(cursor.getColumnIndex(ContactsContract.Contacts._ID))
 
-                //get existing list of contact methods
-                val cr = this@ContactDataActivity.contentResolver
 
+                val dataList = getDataList().await()
+                Log.d("HealthRelay",dataList.toString())
 
-                setAdapterList(cr = cr, contactId = vm.contactId,
-                        contactInfoType = "phone", dataAdapter = phoneDataAdapter)
+                emailDataAdapter.HRContactData = dataList.filter { it.mimetype == Email.CONTENT_ITEM_TYPE }
+                emailDataAdapter.notifyDataSetChanged()
 
-                setAdapterList(cr = cr, contactId = vm.contactId,
-                        contactInfoType = "email", dataAdapter = emailDataAdapter)
-
+                phoneDataAdapter.HRContactData = dataList.filter { it.mimetype == Phone.CONTENT_ITEM_TYPE }
+                phoneDataAdapter.notifyDataSetChanged()
 
                 cursor.close()
             }
-
-
-
-      }
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -94,17 +91,17 @@ class ContactDataActivity : AppCompatActivity() {
             // User chose the "Settings" item, show the app settings UI...
             Toast.makeText(this, "add_contact_save", Toast.LENGTH_LONG).show()
 
-            //save contacts
-            val phones = phoneDataAdapter.contactData
-            val emails = emailDataAdapter.contactData
+            //get the in memory selections from the adapters
+            val phones = phoneDataAdapter.HRContactData
+            val emails = emailDataAdapter.HRContactData
 
-            val combined = ArrayList<ContactData>()
-            combined.addAll(phones)
-            combined.addAll(emails)
 
-            async(UI){
-                bg { vm.saveContact(combined) }
-            }
+            ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME_PRIMARY
+
+
+//            async(UI){
+//                bg { vm.saveContact(vm.contactId, combined) }
+//            }
 
 
             //get selected
@@ -117,69 +114,72 @@ class ContactDataActivity : AppCompatActivity() {
         }
     }
 
-    private fun setAdapterList(cr: ContentResolver, contactId : String, contactInfoType: String, dataAdapter : ContactDataAdapter) {
+    private fun getDataList() : Deferred<List<HRContactData>> {
 
-        val uri : Uri
-        val columnIndex : String
-        val contactInfoIdCol : String
-        val contactIdCol: String
+        //get existing list of contact methods
+        val cr = this@ContactDataActivity.contentResolver
 
-        when(contactInfoType){
-            "phone" -> {
-                uri = Phone.CONTENT_URI
-                columnIndex = Phone.NUMBER
-                contactInfoIdCol = Phone._ID
-                contactIdCol = Phone.CONTACT_ID
-            }
-            else -> { //if not phone, for now, it must be email
-                uri = Email.CONTENT_URI
-                columnIndex = Email.ADDRESS
-                contactInfoIdCol = Email._ID
-                contactIdCol = Email.CONTACT_ID
-            }
-        }
+        val uri = Data.CONTENT_URI
 
-
-        val info = cr.query(uri, null,
-                "$contactIdCol = $contactId", null, null)
+        val c = cr.query(uri, arrayOf
+        (
+                Data.DATA1,
+                Data._ID,
+                Data.MIMETYPE,
+                Data.RAW_CONTACT_ID
+        ),
+        Data.CONTACT_ID + " = " + vm.contactId,
+        null, null)
 
         //list of phone numbers, list of emails, etc go in here
-        val infoList = arrayListOf<ContactData>()
+        val dataList = arrayListOf<HRContactData>()
+        val cachedHRContactData = HashMap<String, List<HRContactData>>()
 
-        //hide the contact information if it was already used
-        async(UI) {
+        return async(UI) {
 
-            //get existing contacts
-            val contactWithContactData = bg { vm.getStoredContactInfo(contactId) }.await()
+            if(c != null){
+                //iterate through each Data entry for each top level aggregated contract
+                while (c.moveToNext()) {
+                    val data = c.getString(c.getColumnIndex(Data.DATA1))
+                    val dataId = c.getString(c.getColumnIndex(Data._ID))
+                    val mimetype = c.getString(c.getColumnIndex(Data.MIMETYPE))
+                    val rawContactId = c.getString(c.getColumnIndex(Data.RAW_CONTACT_ID))
 
-            //Log.d("HealthRelay", contactWithContactData.contactData.toString())
+                    //if we haven't cached this raw_contact's info yet, then get HR info from db and cache
+                    //we cache because a single raw contact may have multiple Data entries (phone, email).
+                    if(cachedHRContactData[rawContactId] == null){
 
-            if(info != null){
-                while (info.moveToNext()) {
-                    //TODO: possibly check to see if _ID of col info has changed for duplicate info?
-                    val contactInfo = info.getString(info.getColumnIndex(columnIndex))
-                    val id = info.getString(info.getColumnIndex(contactInfoIdCol))
+                        //get additional data that we stored about this particular raw contact
+                        val hrContactData = bg { vm.getHRContactData(rawContactId) }.await()
 
-                    //set isEnabled to true if our persisted data shows as true
-                    val stored = contactWithContactData?.contactData?.find {
-                        it.id == id
+                        //if we do have some results, cache it
+                        if(hrContactData != null){
+                            cachedHRContactData[rawContactId] = hrContactData
+                        }else{
+                            //if we don't have any stored information for this raw contact, then we set it to an empty list
+                            cachedHRContactData[rawContactId] = listOf()
+                        }
                     }
 
-                    if(stored != null && stored.isEnabled){
-                        infoList.add(ContactData(id=id, type=contactInfoType, info=contactInfo, contactId = contactId, isEnabled=true))
+                    //filter through the cached list. If we find a matching Data._ID, use it to populate the isEnabled field.
+                    //We have @Ignore fields on HRContactData so the UI can show the actual data field
+                    val hrContactData = cachedHRContactData[rawContactId]?.find { it.id == dataId }
+
+                    if(hrContactData != null){
+                        dataList.add(HRContactData(id=dataId, mimetype=mimetype, data=data, rawContactId = rawContactId, isEnabled=hrContactData.isEnabled))
                     }else{
-                        infoList.add(ContactData(id=id, type=contactInfoType, info=contactInfo, contactId = contactId))
+                        dataList.add(HRContactData(id=dataId, mimetype=mimetype, data=data, rawContactId = rawContactId))
                     }
                 }
 
-                info.close()
+                c.close()
             }else{
-                Log.d("HealthRelay","in the else")
+                Log.e("HealthRelay","cursor was null")
             }
 
-            dataAdapter.contactData = infoList
-            dataAdapter.initialize()
-            dataAdapter.notifyDataSetChanged()
+            return@async dataList
+//            dataAdapter.initialize()
+//            dataAdapter.notifyDataSetChanged()
         }
 
 
