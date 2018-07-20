@@ -18,7 +18,7 @@ import kotlinx.coroutines.experimental.launch
 class ContactDataViewModel(application : Application) : AndroidViewModel(application) {
     @Inject
     lateinit var appDb : AppDatabase
-    lateinit var contactId : String
+    var contactId : Long = -1
     lateinit var contactName : String
 
     //this is the health relay data id for the MIMETYPE_HRNOTIFY row.
@@ -54,7 +54,7 @@ class ContactDataViewModel(application : Application) : AndroidViewModel(applica
     /**
      * Gets the stored contact info for a particular contact
      */
-    fun getHRContactData(id: String) : List<HRContactData>?{
+    fun getHRContactData(id: Long) : List<HRContactData>?{
         val list : List<HRContactData>? = try{
             appDb.hrContactDataDao().getHRContactDataByContactId(id)
         }catch(ex : Exception){

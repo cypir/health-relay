@@ -15,7 +15,7 @@ data class HRContactData (
          */
         @PrimaryKey
         @ColumnInfo(name="id")
-        var id : String = "",
+        var id : Long = -1,
 
         //denotes whether it is phone or email
         @ColumnInfo(name="mimetype")
@@ -31,5 +31,5 @@ data class HRContactData (
         //we store only the raw contact ids, since the contact_ids are subject to change
         //if merged.
         @ColumnInfo(name="raw_contact_id")
-        var rawContactId : String = ""
+        var rawContactId : Long = -1
 )

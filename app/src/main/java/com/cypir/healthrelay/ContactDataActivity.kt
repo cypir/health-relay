@@ -67,7 +67,7 @@ class ContactDataActivity : AppCompatActivity() {
                 vm.contactName = cursor.getString(cursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME))
                 text_name.text = vm.contactName
 
-                vm.contactId = cursor.getString(cursor.getColumnIndex(ContactsContract.Contacts._ID))
+                vm.contactId = cursor.getLong(cursor.getColumnIndex(ContactsContract.Contacts._ID))
 
 
                 val dataList = getDataList().await()
@@ -108,7 +108,7 @@ class ContactDataActivity : AppCompatActivity() {
             //we will need to verify one by one whether or not each of these raw_contact_ids has a
             //health relay mimetype row.
 
-            val existingMimeRows = HashMap<String, Boolean>()
+            val existingMimeRows = HashMap<Long, Boolean>()
 
             //first, figure out which raw contacts already have the HR mimetype associated
             val existingMimeC = contentResolver.query(
@@ -123,7 +123,7 @@ class ContactDataActivity : AppCompatActivity() {
 
             //store the RAW_CONTACT_ID in the map so we know if a user already has an HR mimetype row
             while(existingMimeC.moveToNext()){
-                existingMimeRows[existingMimeC.getString(existingMimeC.getColumnIndex(Data.RAW_CONTACT_ID))] = true
+                existingMimeRows[existingMimeC.getLong(existingMimeC.getColumnIndex(Data.RAW_CONTACT_ID))] = true
             }
 
             existingMimeC.close()
@@ -184,7 +184,7 @@ class ContactDataActivity : AppCompatActivity() {
 
         //list of phone numbers, list of emails, etc go in here
         val dataList = arrayListOf<HRContactData>()
-        val cachedHRContactData = HashMap<String, List<HRContactData>>()
+        val cachedHRContactData = HashMap<Long, List<HRContactData>>()
 
         return async(UI) {
 
@@ -192,9 +192,9 @@ class ContactDataActivity : AppCompatActivity() {
                 //iterate through each Data entry for each top level aggregated contract
                 while (c.moveToNext()) {
                     val data = c.getString(c.getColumnIndex(Data.DATA1))
-                    val dataId = c.getString(c.getColumnIndex(Data._ID))
+                    val dataId = c.getLong(c.getColumnIndex(Data._ID))
                     val mimetype = c.getString(c.getColumnIndex(Data.MIMETYPE))
-                    val rawContactId = c.getString(c.getColumnIndex(Data.RAW_CONTACT_ID))
+                    val rawContactId = c.getLong(c.getColumnIndex(Data.RAW_CONTACT_ID))
 
                     //skip if data is null
                     if(data == null){
