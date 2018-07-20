@@ -1,6 +1,7 @@
 package com.cypir.healthrelay
 
 import android.app.Activity
+import android.arch.lifecycle.Observer
 import android.arch.lifecycle.ViewModelProviders
 import android.content.Intent
 import android.os.Bundle
@@ -14,6 +15,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import com.cypir.healthrelay.adapter.ContactAdapter
+import com.cypir.healthrelay.entity.HRContactData
 import com.cypir.healthrelay.pojo.HRContact
 import com.cypir.healthrelay.viewmodel.MainViewModel
 import kotlinx.android.synthetic.main.fragment_contact.*
@@ -53,62 +55,62 @@ class ContactFragment : Fragment() {
         rv_contacts.adapter = contactAdapter
         rv_contacts.layoutManager = LinearLayoutManager(context)
 
-        //we will group the contact data by lookup_key
-        //we store whether or not a contactcontract.data row is checked via matching the _ID with our
-        //own database
-        launch(UI){
-            try {
-                val c = bg {
+        //create observer on HRContactData in order to update our contact list whenever we create/update/delete
+        //HRContactData (eg. adding a contact data selection
 
-                    activity?.contentResolver?.query(
-                        Data.CONTENT_URI,
-                        arrayOf(
-                            Data.RAW_CONTACT_ID,
-                            Data.CONTACT_ID,
-                            Data._ID,
-                            StructuredName.DISPLAY_NAME_PRIMARY
-                        ),
-                        Data.MIMETYPE + "=?", arrayOf(HR_NOTIFY_MIMETYPE), null
-                    )
-                }.await()
+        vm.getHRContactData().observe(this, Observer<List<HRContactData>> {
+            launch(UI) {
+                try {
+                    val c = bg {
 
-                val hrContacts = arrayListOf<HRContact>()
+                        activity?.contentResolver?.query(
+                                Data.CONTENT_URI,
+                                arrayOf(
+                                        Data.RAW_CONTACT_ID,
+                                        Data.CONTACT_ID,
+                                        Data._ID,
+                                        StructuredName.DISPLAY_NAME_PRIMARY
+                                ),
+                                Data.MIMETYPE + "=?", arrayOf(HR_NOTIFY_MIMETYPE), null
+                        )
+                    }.await()
 
-                //iterate through data that has the appropriate mimetype and group by the contact_id.
-                if(c != null){
-                    while(c.moveToNext()){
-                        //find if we already have this contact id in our list of contact names
-                        val indexOfContactId = hrContacts.indexOfFirst{
-                            it.contactId == c.getString(c.getColumnIndex(Data.CONTACT_ID))
-                        }
+                    val hrContacts = arrayListOf<HRContact>()
 
-                        //only add contact name if index is 0
-                        if( indexOfContactId < 0)
-                        {
-                            hrContacts.add(
-                                HRContact(
-                                    rawContactId = c.getString(c.getColumnIndex(Data.RAW_CONTACT_ID)),
-                                    displayName = c.getString(c.getColumnIndex(StructuredName.DISPLAY_NAME_PRIMARY)),
-                                    contactDataId = c.getString(c.getColumnIndex(Data._ID)),
-                                    contactId = c.getString(c.getColumnIndex(Data.CONTACT_ID))
+                    //iterate through data that has the appropriate mimetype and group by the contact_id.
+                    if (c != null) {
+                        while (c.moveToNext()) {
+                            //find if we already have this contact id in our list of contact names
+                            val indexOfContactId = hrContacts.indexOfFirst {
+                                it.contactId == c.getString(c.getColumnIndex(Data.CONTACT_ID))
+                            }
+
+                            //only add contact name if index is 0
+                            if (indexOfContactId < 0) {
+                                hrContacts.add(
+                                        HRContact(
+                                                rawContactId = c.getString(c.getColumnIndex(Data.RAW_CONTACT_ID)),
+                                                displayName = c.getString(c.getColumnIndex(StructuredName.DISPLAY_NAME_PRIMARY)),
+                                                contactDataId = c.getString(c.getColumnIndex(Data._ID)),
+                                                contactId = c.getString(c.getColumnIndex(Data.CONTACT_ID))
+                                        )
                                 )
-                            )
+                            }
                         }
                     }
+
+                    //close the cursor
+                    c?.close()
+
+                    //TODO do a diff patch to get differences
+                    contactAdapter.contacts = hrContacts
+                    contactAdapter.notifyDataSetChanged()
+
+                } catch (ex: Exception) {
+                    Log.d("HealthRelayError", ex.toString())
                 }
-
-                //close the cursor
-                c?.close()
-
-                //TODO do a diff patch to get differences
-                contactAdapter.contacts = hrContacts
-                contactAdapter.notifyDataSetChanged()
-
-            }catch(ex: Exception){
-                Log.d("HealthRelayError",ex.toString())
             }
-        }
-
+        })
 
         fab_add_contact.setOnClickListener { _ ->
             val pickContactIntent = Intent(Intent.ACTION_PICK, ContactsContract.Contacts.CONTENT_URI)

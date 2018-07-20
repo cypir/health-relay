@@ -10,5 +10,5 @@ import com.cypir.healthrelay.entity.HRContactData
  */
 @Database(entities = [HRContactData::class], version = 1)
 abstract class AppDatabase : RoomDatabase(){
-    abstract fun contactDataDao() : HRContactDataDao
+    abstract fun hrContactDataDao() : HRContactDataDao
 }

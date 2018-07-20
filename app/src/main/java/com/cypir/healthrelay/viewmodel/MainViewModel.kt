@@ -6,6 +6,7 @@ import android.arch.lifecycle.LiveData
 import android.arch.lifecycle.MutableLiveData
 import com.cypir.healthrelay.AppDatabase
 import com.cypir.healthrelay.MainApplication
+import com.cypir.healthrelay.entity.HRContactData
 import java.util.*
 import javax.inject.Inject
 
@@ -26,6 +27,10 @@ class MainViewModel(application : Application) : AndroidViewModel(application) {
 
         //initialize the next check for the date to
         nextCheck = Date()
+    }
+
+    fun getHRContactData() : LiveData<List<HRContactData>>{
+        return appDb.hrContactDataDao().getAllHRContactData()
     }
 
     /**

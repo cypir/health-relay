@@ -46,7 +46,7 @@ class ContactDataViewModel(application : Application) : AndroidViewModel(applica
             //bg { appDb.contactDao().insertContact(Contact(id = contactId, name=contactName)) }.await()
             bg {
                 //insert only contacts that are enabled
-                appDb.contactDataDao().insertHRContactData(list)
+                appDb.hrContactDataDao().insertHRContactData(list)
             }.await()
         }
     }
@@ -56,7 +56,7 @@ class ContactDataViewModel(application : Application) : AndroidViewModel(applica
      */
     fun getHRContactData(id: String) : List<HRContactData>?{
         val list : List<HRContactData>? = try{
-            appDb.contactDataDao().getHRContactDataByContactId(id)
+            appDb.hrContactDataDao().getHRContactDataByContactId(id)
         }catch(ex : Exception){
             Log.d("HealthRelay","Ran into an error")
             null

@@ -196,6 +196,11 @@ class ContactDataActivity : AppCompatActivity() {
                     val mimetype = c.getString(c.getColumnIndex(Data.MIMETYPE))
                     val rawContactId = c.getString(c.getColumnIndex(Data.RAW_CONTACT_ID))
 
+                    //skip if data is null
+                    if(data == null){
+                        continue
+                    }
+
                     //if we haven't cached this raw_contact's info yet, then get HR info from db and cache
                     //we cache because a single raw contact may have multiple Data entries (phone, email).
                     if(cachedHRContactData[rawContactId] == null){
@@ -229,11 +234,7 @@ class ContactDataActivity : AppCompatActivity() {
             }
 
             return@async dataList
-//            dataAdapter.initialize()
-//            dataAdapter.notifyDataSetChanged()
         }
-
-
     }
 
 }
