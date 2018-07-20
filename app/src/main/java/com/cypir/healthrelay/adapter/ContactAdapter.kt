@@ -3,13 +3,14 @@ package com.cypir.healthrelay.adapter
 import android.content.Context
 import android.support.v7.widget.RecyclerView
 import android.util.Log
+import com.cypir.healthrelay.pojo.HRContact
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.view.View
 import com.cypir.healthrelay.R
 import kotlinx.android.synthetic.main.item_contact.view.*
 
-class ContactAdapter(var context: Context, var contacts: List<String>) : RecyclerView.Adapter<ContactAdapter.ContactHolder>() {
+class ContactAdapter(var context: Context, var contacts: List<HRContact>) : RecyclerView.Adapter<ContactAdapter.ContactHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ContactHolder {
         val layoutInflater = LayoutInflater.from(context)
@@ -24,7 +25,7 @@ class ContactAdapter(var context: Context, var contacts: List<String>) : Recycle
     }
 
     override fun onBindViewHolder(holder: ContactHolder, position: Int) {
-        holder.name.text = contacts[position]
+        holder.name.text = contacts[position].displayName
     }
 
     //Holds the item information

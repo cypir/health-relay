@@ -23,6 +23,9 @@ import com.cypir.healthrelay.entity.HRContactData
 import kotlinx.android.synthetic.main.activity_contact_data.*
 import kotlinx.coroutines.experimental.Deferred
 import kotlinx.coroutines.experimental.launch
+import android.content.ContentProviderOperation
+
+
 
 
 class ContactDataActivity : AppCompatActivity() {
@@ -40,6 +43,7 @@ class ContactDataActivity : AppCompatActivity() {
 
         val extras = intent.extras
         val contactUri = extras.getParcelable<Uri>("contactUri")
+        vm.hrMimeId = extras.getString("hrMimeId")
 
         //initialize empty adapters
         phoneDataAdapter = ContactDataAdapter(this@ContactDataActivity, arrayListOf())
@@ -87,24 +91,71 @@ class ContactDataActivity : AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem) = when (item.itemId) {
+        //when a user saves their notification selection
         R.id.add_contact_save -> {
-            // User chose the "Settings" item, show the app settings UI...
             Toast.makeText(this, "add_contact_save", Toast.LENGTH_LONG).show()
 
             //get the in memory selections from the adapters
             val phones = phoneDataAdapter.HRContactData
             val emails = emailDataAdapter.HRContactData
 
+            val combined = phones + emails
 
-            ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME_PRIMARY
+            Log.d("HealthRelay",phones.toString())
+            Log.d("HealthRelay",emails.toString())
 
+            //iterate through the user selections in the phones and emails lists. Get the raw_contact_ids.
+            //we will need to verify one by one whether or not each of these raw_contact_ids has a
+            //health relay mimetype row.
 
-//            async(UI){
-//                bg { vm.saveContact(vm.contactId, combined) }
-//            }
+            val existingMimeRows = HashMap<String, Boolean>()
 
+            //first, figure out which raw contacts already have the HR mimetype associated
+            val existingMimeC = contentResolver.query(
+                    Data.CONTENT_URI,
+                    arrayOf(
+                            Data._ID,
+                            Data.RAW_CONTACT_ID
+                    ),
+                     Data.MIMETYPE + "= ?",
+                    arrayOf(vm.MIMETYPE_HRNOTIFY),
+                    null)
 
-            //get selected
+            //store the RAW_CONTACT_ID in the map so we know if a user already has an HR mimetype row
+            while(existingMimeC.moveToNext()){
+                existingMimeRows[existingMimeC.getString(existingMimeC.getColumnIndex(Data.RAW_CONTACT_ID))] = true
+            }
+
+            existingMimeC.close()
+
+            //now iterate through the list of user selected contacts, adding to the list of in memory mime
+            //rows whenever we don't see a match. If we don't see a match, make sure to add to the batch transaction.
+            val ops = ArrayList<ContentProviderOperation>()
+
+            combined.forEach {
+                //if we don't currently have this mime row or don't intend to add it yet, then we must add it
+                if(existingMimeRows[it.rawContactId] == null){
+                    //add the mime type to the batch transaction
+                    ops.add(ContentProviderOperation.newInsert(Data.CONTENT_URI)
+                            .withValue(Data.RAW_CONTACT_ID, it.rawContactId)
+                            .withValue(Data.MIMETYPE, vm.MIMETYPE_HRNOTIFY)
+                            .withValue(Data.DATA1, true)
+                            .build())
+
+                    //add to the existingMimeRows (since we intend to add it, we don't want to do a duplicate insert)
+                    existingMimeRows[it.rawContactId] = true
+                }
+            }
+
+            //add mimetypes to the db
+            contentResolver.applyBatch(ContactsContract.AUTHORITY, ops)
+
+            //add hrcontactdata to the db
+            launch(UI){
+                //now add the combined list to the db
+                bg { vm.saveHRContactData(combined) }.await()
+            }
+
             true
         }
         else -> {

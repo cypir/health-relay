@@ -18,7 +18,7 @@ interface HRContactDataDao {
     //when we try to insert, replace on conflict. possibly create non persistent to determine if update or insert?
     //TODO convert this to upsert
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insertContactData(list : List<HRContactData>)
+    fun insertHRContactData(list : List<HRContactData>)
 
     @Query("select * from Contact_Data where raw_contact_id = :rawContactId")
     fun getHRContactDataByContactId(rawContactId : String) : List<HRContactData> ?

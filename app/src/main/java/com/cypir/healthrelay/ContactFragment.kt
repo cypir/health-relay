@@ -6,6 +6,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.provider.ContactsContract
 import android.provider.ContactsContract.Data
+import android.provider.ContactsContract.CommonDataKinds.StructuredName
 import android.support.v4.app.Fragment
 import android.support.v7.widget.LinearLayoutManager
 import android.util.Log
@@ -13,6 +14,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import com.cypir.healthrelay.adapter.ContactAdapter
+import com.cypir.healthrelay.pojo.HRContact
 import com.cypir.healthrelay.viewmodel.MainViewModel
 import kotlinx.android.synthetic.main.fragment_contact.*
 import kotlinx.coroutines.experimental.android.UI
@@ -58,21 +60,52 @@ class ContactFragment : Fragment() {
             try {
                 val c = bg {
 
-                        activity?.contentResolver?.query(
-                                Data.CONTENT_URI,
-                                arrayOf(
-                                        Data.RAW_CONTACT_ID,
-                                        ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME_PRIMARY
-                                ),
-                                Data.MIMETYPE + "=" + "?", arrayOf(HR_NOTIFY_MIMETYPE), null
-                        )
-
+                    activity?.contentResolver?.query(
+                        Data.CONTENT_URI,
+                        arrayOf(
+                            Data.RAW_CONTACT_ID,
+                            Data.CONTACT_ID,
+                            Data._ID,
+                            StructuredName.DISPLAY_NAME_PRIMARY
+                        ),
+                        Data.MIMETYPE + "=?", arrayOf(HR_NOTIFY_MIMETYPE), null
+                    )
                 }.await()
 
+                val hrContacts = arrayListOf<HRContact>()
+
                 //iterate through data that has the appropriate mimetype and group by the contact_id.
+                if(c != null){
+                    while(c.moveToNext()){
+                        //find if we already have this contact id in our list of contact names
+                        val indexOfContactId = hrContacts.indexOfFirst{
+                            it.contactId == c.getString(c.getColumnIndex(Data.CONTACT_ID))
+                        }
+
+                        //only add contact name if index is 0
+                        if( indexOfContactId < 0)
+                        {
+                            hrContacts.add(
+                                HRContact(
+                                    rawContactId = c.getString(c.getColumnIndex(Data.RAW_CONTACT_ID)),
+                                    displayName = c.getString(c.getColumnIndex(StructuredName.DISPLAY_NAME_PRIMARY)),
+                                    contactDataId = c.getString(c.getColumnIndex(Data._ID)),
+                                    contactId = c.getString(c.getColumnIndex(Data.CONTACT_ID))
+                                )
+                            )
+                        }
+
+
+                    }
+                }
 
                 //close the cursor
                 c?.close()
+
+                //TODO do a diff patch to get differences
+                contactAdapter.contacts = hrContacts
+                contactAdapter.notifyDataSetChanged()
+
             }catch(ex: Exception){
                 Log.d("HealthRelayError",ex.toString())
             }

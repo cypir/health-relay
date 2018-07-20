@@ -21,6 +21,9 @@ class ContactDataViewModel(application : Application) : AndroidViewModel(applica
     lateinit var contactId : String
     lateinit var contactName : String
 
+    //this is the health relay data id for the MIMETYPE_HRNOTIFY row.
+    var hrMimeId : String? = null
+
     val MIMETYPE_HRNOTIFY = "vnd.android.cursor.item/health_relay_notify"
 
     init {
@@ -28,25 +31,22 @@ class ContactDataViewModel(application : Application) : AndroidViewModel(applica
     }
 
     /**
-     * uses a custom MIMETYPE to store the relevant notify boolean (whether or not to notify
-     * a particular data set). We only have to update the ContactContract.Data table.
-     * We will query the data table for all entries with the custom mimetype and manually
-     * group by lookupid
+     * Store DATA level data for HR, such as enable/disable notifications
      */
-    fun saveContact(contactId: String, list : List<HRContactData>){
+    fun saveHRContactData(list : List<HRContactData>){
 
         //val values = ContentValues()
         //values.put(ContactsContract.Data.DATA1, if (this.getFormality()) "1" else "0")
 
         //get only isEnabled contacts to save
-        val toInsert = list.filter { it.isEnabled }
+        //val toInsert = list.filter { it.isEnabled }
 
         //TODO make this a transaction and and upsert
         launch(UI){
             //bg { appDb.contactDao().insertContact(Contact(id = contactId, name=contactName)) }.await()
             bg {
                 //insert only contacts that are enabled
-                appDb.contactDataDao().insertContactData(toInsert)
+                appDb.contactDataDao().insertHRContactData(list)
             }.await()
         }
     }
