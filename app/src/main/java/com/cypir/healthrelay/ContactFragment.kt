@@ -3,6 +3,7 @@ package com.cypir.healthrelay
 import android.app.Activity
 import android.arch.lifecycle.Observer
 import android.arch.lifecycle.ViewModelProviders
+import android.content.ContentUris
 import android.content.Intent
 import android.os.Bundle
 import android.provider.ContactsContract
@@ -28,15 +29,23 @@ import org.jetbrains.anko.coroutines.experimental.bg
  * Displays the list of stored contacts.
  *
  */
-class ContactFragment : Fragment() {
+class ContactFragment : Fragment(), ContactAdapter.OnItemClickListener {
+    override fun onItemClick(item: HRContact) {
+        //launch the ContactDataActivity with the appropriate contact uri
+        val intent = Intent(context, ContactDataActivity::class.java)
+        intent.putExtra("contactUri", ContentUris.withAppendedId(
+                ContactsContract.Contacts.CONTENT_URI, item.contactId.toLong())
+        )
+        startActivity(intent)
+    }
 
     private val PICK_CONTACT_REQUEST = 1
     private val HR_NOTIFY_MIMETYPE = "vnd.android.cursor.item/health_relay_notify"
 
-    lateinit var vm : MainViewModel
+    lateinit var vm: MainViewModel
 
     //initialize adapter to empty
-    lateinit var contactAdapter : ContactAdapter
+    lateinit var contactAdapter: ContactAdapter
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
                               savedInstanceState: Bundle?): View? {
@@ -51,7 +60,7 @@ class ContactFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        contactAdapter = ContactAdapter(context!!, arrayListOf())
+        contactAdapter = ContactAdapter(context!!, arrayListOf(), this)
         rv_contacts.adapter = contactAdapter
         rv_contacts.layoutManager = LinearLayoutManager(context)
 
@@ -126,8 +135,8 @@ class ContactFragment : Fragment() {
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if(requestCode == PICK_CONTACT_REQUEST){
-            if(resultCode == Activity.RESULT_OK){
+        if (requestCode == PICK_CONTACT_REQUEST) {
+            if (resultCode == Activity.RESULT_OK) {
 
                 //when we receive the response from the contact picker activity, we then initiate our own
                 //dialog which allows the user to select the particular contact information they want for this user.
