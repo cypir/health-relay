@@ -94,8 +94,6 @@ class ContactFragment : Fragment() {
                                 )
                             )
                         }
-
-
                     }
                 }
 
@@ -120,21 +118,9 @@ class ContactFragment : Fragment() {
 
         //create listener
         /**
-         * Todo: use content provider to display list of names given a list of ids
-         * adding an id will trigger an observer change, where we then update the cursor
-         * query to include the new id.
+         * Create listener for content provider (content observer?) that will update the contact list
+         * when a change occurs.
          */
-//        vm.contacts.observe(this, Observer<List<Contact>> {
-//            contacts ->
-//
-//            Log.d("HealthRelay",contacts.toString())
-//            if(contacts != null){
-//                contactAdapter.contacts = contacts
-//
-//                //TODO: use delta/patch diff tool
-//                contactAdapter.notifyDataSetChanged()
-//            }
-//        })
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
