@@ -9,9 +9,6 @@ import com.cypir.healthrelay.viewmodel.MainViewModel
 import kotlinx.android.synthetic.main.activity_main.*
 import android.content.Intent
 import android.os.Build
-import android.support.annotation.StringRes
-import android.support.v7.app.AlertDialog
-import android.widget.Toast
 import com.cypir.healthrelay.service.RelayService
 import pub.devrel.easypermissions.AfterPermissionGranted
 import pub.devrel.easypermissions.EasyPermissions

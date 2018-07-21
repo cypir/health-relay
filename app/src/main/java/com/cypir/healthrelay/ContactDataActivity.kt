@@ -1,5 +1,6 @@
 package com.cypir.healthrelay
 
+import android.Manifest
 import android.arch.lifecycle.ViewModelProviders
 import android.content.ContentResolver
 import android.net.Uri
@@ -24,16 +25,46 @@ import kotlinx.android.synthetic.main.activity_contact_data.*
 import kotlinx.coroutines.experimental.Deferred
 import kotlinx.coroutines.experimental.launch
 import android.content.ContentProviderOperation
+import pub.devrel.easypermissions.AfterPermissionGranted
+import pub.devrel.easypermissions.EasyPermissions
 
 
-
-
-class ContactDataActivity : AppCompatActivity() {
-
+class ContactDataActivity : AppCompatActivity(), ContactDataAdapter.OnDataEnabled {
     lateinit var phoneDataAdapter : ContactDataAdapter
     lateinit var emailDataAdapter : ContactDataAdapter
 
+    var hasSmsPerm = false
+
     lateinit var vm : ContactDataViewModel
+
+    override fun dataPermEnabled(mimetype: String): Boolean {
+        //check mimetype
+        when(mimetype){
+            Phone.CONTENT_ITEM_TYPE -> {
+                getSmsPerm()
+                return hasSmsPerm
+            }
+        }
+        return true
+    }
+
+    @AfterPermissionGranted(2)
+    fun getSmsPerm(){
+        val perms = arrayOf(Manifest.permission.SEND_SMS)
+
+        val hasPermissions = EasyPermissions.hasPermissions(this,
+                *perms)
+
+        if (hasPermissions){
+            hasSmsPerm = true
+        }else{
+            EasyPermissions.requestPermissions(this,
+                    "We need to be able to send SMS in order to notify this contact.",
+                    2,
+                    *perms
+            )
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -46,11 +77,11 @@ class ContactDataActivity : AppCompatActivity() {
         vm.hrMimeId = extras.getString("hrMimeId")
 
         //initialize empty adapters
-        phoneDataAdapter = ContactDataAdapter(this@ContactDataActivity, arrayListOf())
+        phoneDataAdapter = ContactDataAdapter(this@ContactDataActivity, arrayListOf(), this)
         rv_phone_numbers.adapter = phoneDataAdapter
         rv_phone_numbers.layoutManager = LinearLayoutManager(this@ContactDataActivity)
 
-        emailDataAdapter = ContactDataAdapter(this@ContactDataActivity, arrayListOf())
+        emailDataAdapter = ContactDataAdapter(this@ContactDataActivity, arrayListOf(), this)
         rv_email_addresses.adapter = emailDataAdapter
         rv_email_addresses.layoutManager = LinearLayoutManager(this@ContactDataActivity)
 
@@ -235,6 +266,13 @@ class ContactDataActivity : AppCompatActivity() {
 
             return@async dataList
         }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        // Forward results to EasyPermissions
+        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
     }
 
 }

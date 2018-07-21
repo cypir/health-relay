@@ -14,7 +14,14 @@ import kotlinx.android.synthetic.main.item_add_contact.view.*
  * Adapter for a list of contact info for a particular medium. For example, HRContactData could be
  * a list of email addresses or a list of phone numbers
  */
-class ContactDataAdapter(var context: Context, var HRContactData: List<HRContactData>) : RecyclerView.Adapter<ContactDataAdapter.ContactHolder>() {
+class ContactDataAdapter(var context: Context, var HRContactData: List<HRContactData>, var listener : OnDataEnabled) : RecyclerView.Adapter<ContactDataAdapter.ContactHolder>() {
+
+    //called when a user attempts to click on the checkbox next to a contact method
+    interface OnDataEnabled {
+
+        //to check whether or not the data permission has been granted or not.
+        fun dataPermEnabled(mimetype : String) : Boolean
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ContactHolder {
         val layoutInflater = LayoutInflater.from(context)
@@ -33,8 +40,17 @@ class ContactDataAdapter(var context: Context, var HRContactData: List<HRContact
         holder.contact_info.text = HRContactData[position].data
         holder.contact_info.isChecked = HRContactData[position].isEnabled
         holder.contact_info.setOnCheckedChangeListener { buttonView, isChecked ->
-            HRContactData[position].isEnabled = isChecked
-            Log.d("HealthRelay","$HRContactData")
+            //on check, we have to determine what permissions we need.
+            val dataPermEnabled = listener.dataPermEnabled(HRContactData[position].mimetype)
+
+            //only if we have the permissions for this datatype (phone, email, etc)
+            if(dataPermEnabled) {
+                HRContactData[position].isEnabled = isChecked
+                Log.d("HealthRelay", "$HRContactData")
+            }else{
+                //otherwise uncheck the box
+                holder.contact_info.isChecked = false
+            }
         }
     }
 

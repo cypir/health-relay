@@ -1,9 +1,6 @@
 package com.cypir.healthrelay.service
 
-import android.app.Application
-import android.app.Notification
-import android.app.PendingIntent
-import android.app.Service
+import android.app.*
 import android.content.Context
 import android.content.Intent
 import android.hardware.*
@@ -20,6 +17,13 @@ import com.cypir.healthrelay.R
 import java.math.RoundingMode
 import java.text.DecimalFormat
 import java.util.*
+import android.os.PowerManager
+import android.content.IntentFilter
+import android.content.BroadcastReceiver
+
+
+
+
 
 
 /**
@@ -33,7 +37,7 @@ import java.util.*
  *
  * 1. Get contacts via room and then send SMS to each one of those contacts.
  */
-class RelayService : Service(), SensorEventListener {
+class RelayService : Service() {
     @Inject
     lateinit var appDb : AppDatabase
 
@@ -60,66 +64,37 @@ class RelayService : Service(), SensorEventListener {
     private var lastReset = Date()
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        //return super.onStartCommand(intent, flags, startId)
-        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        sensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)
-        sensorManager.registerListener(this, sensor, 2 * 1000 * 1000)
+        var am = applicationContext.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
-        initTimer()
+        //receiver for when the screen is turned off.
+        //When screen is turned off, schedule an alarm x minutes into the future, where x
+        //is the interval that we set.
+        registerReceiver(object : BroadcastReceiver() {
+
+            override fun onReceive(context: Context, intent: Intent) {
+                //when the screen turns off,
+                //am.setExactAndAllowWhileIdle()
+
+            }
+        }, IntentFilter(Intent.ACTION_SCREEN_OFF))
+
+        //Receiver for when the screen is turned on.
+        //When the screen is turned on, cancel the alarm that we scheduled when the screen turns on
+
+        registerReceiver(object : BroadcastReceiver() {
+
+            override fun onReceive(context: Context, intent: Intent) {
+                //This happens when the screen is turned on and screen lock deactivated
+            }
+        }, IntentFilter(Intent.ACTION_SCREEN_ON))
+
+
 
         notificationManager =  NotificationManagerCompat.from(this)
 
         startForeground(NOTIFICATION_ID, createNotification())
 
         return Service.START_STICKY
-    }
-
-    override fun onSensorChanged(event: SensorEvent?) {
-
-        val df = DecimalFormat("0.00")
-        df.roundingMode = RoundingMode.DOWN
-
-        val x = Math.abs(df.format(event!!.values[0]).toDouble())
-        val y = Math.abs(df.format(event.values[1]).toDouble())
-        val z = Math.abs(df.format(event.values[2]).toDouble())
-
-        //if any values on gyroscope are not equal to 0 (means moving)
-        if(x > 0.1 || y > 0.1 || z > 0.1){
-            initTimer()
-        }
-
-        //TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-        //TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    //cancel existing timer if necessary and recreate the timer
-    private fun initTimer(){
-        timer?.cancel()
-        lastReset = Date()
-
-        //reset iterations
-        iterations = 0
-
-        timer = object : CountDownTimer(interval, 1000) {
-            override fun onFinish() {
-                //update last tick
-                msRemaining = 0
-                iterations++
-
-
-                timer?.cancel()
-                timer?.start()
-            }
-
-            //on tick purely meant for showing the countdown timer
-            override fun onTick(ms: Long) {
-                msRemaining = ms
-                updateNotification()
-            }
-        }.start()
     }
 
     private fun createNotification() : Notification {
