@@ -4,10 +4,8 @@ import android.app.*
 import android.content.Context
 import android.content.Intent
 import android.hardware.*
-import android.os.IBinder
 import com.cypir.healthrelay.AppDatabase
 import javax.inject.Inject
-import android.os.CountDownTimer
 import android.support.v4.app.NotificationCompat
 import android.support.v4.app.NotificationManagerCompat
 import android.text.format.DateUtils
@@ -17,13 +15,10 @@ import com.cypir.healthrelay.R
 import java.math.RoundingMode
 import java.text.DecimalFormat
 import java.util.*
-import android.os.PowerManager
 import android.content.IntentFilter
 import android.content.BroadcastReceiver
-
-
-
-
+import android.os.*
+import android.telephony.SmsManager
 
 
 /**
@@ -64,8 +59,6 @@ class RelayService : Service() {
     private var lastReset = Date()
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        var am = applicationContext.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-
         //receiver for when the screen is turned off.
         //When screen is turned off, schedule an alarm x minutes into the future, where x
         //is the interval that we set.
@@ -74,6 +67,28 @@ class RelayService : Service() {
             override fun onReceive(context: Context, intent: Intent) {
                 //when the screen turns off,
                 //am.setExactAndAllowWhileIdle()
+                Log.d("HealthRelay","The screen is off")
+
+                //set the interval timer once the screen turns off.
+                val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
+                val alarmIntent = Intent(application, AlarmReceiver::class.java)
+
+                val pendingIntent = PendingIntent.getBroadcast(context, 775, alarmIntent, 0)
+
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    Log.d("HealthRelay","Setting alarm M")
+                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                            SystemClock.elapsedRealtime() + 60 * 1000, pendingIntent)
+                }else{
+                    Log.d("HealthRelay","Setting alarm < M")
+                    alarmManager.setExact(AlarmManager.ELAPSED_REALTIME_WAKEUP,
+                            SystemClock.elapsedRealtime() + 60 * 1000, pendingIntent)
+                }
+
+                //val smsManager = SmsManager.getDefault()
+//                smsManager.sendTextMessage("+17039467550", null, "Message from health relay",
+//                        null, null)
 
             }
         }, IntentFilter(Intent.ACTION_SCREEN_OFF))
@@ -85,6 +100,7 @@ class RelayService : Service() {
 
             override fun onReceive(context: Context, intent: Intent) {
                 //This happens when the screen is turned on and screen lock deactivated
+                Log.d("HealthRelay","Screen has come back on")
             }
         }, IntentFilter(Intent.ACTION_SCREEN_ON))
 

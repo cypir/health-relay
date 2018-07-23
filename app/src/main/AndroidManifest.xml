@@ -25,7 +25,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".ContactDataActivity"></activity>
+        <activity android:name=".ContactDataActivity" />
+
+        <receiver android:name=".service.AlarmReceiver" />
     </application>
 
 </manifest>

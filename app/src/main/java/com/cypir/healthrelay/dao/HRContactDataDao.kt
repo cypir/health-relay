@@ -23,4 +23,7 @@ interface HRContactDataDao {
 
     @Query("select * from Contact_Data")
     fun getAllHRContactData() : LiveData<List<HRContactData>>
+
+    @Query("select * from Contact_Data")
+    fun getAllHRContactDataSync() : List<HRContactData>
 }
