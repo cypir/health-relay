@@ -31,7 +31,7 @@ class ContactAdapter(var context: Context, var contacts: List<HRContact>, var li
     override fun onBindViewHolder(holder: ContactHolder, position: Int) {
         holder.name.text = contacts[position].displayName
 
-        holder.bind(contacts[position], listener);
+        holder.bind(contacts[position], listener)
     }
 
     //Holds the item information

@@ -18,6 +18,7 @@ import java.util.*
 import android.content.IntentFilter
 import android.content.BroadcastReceiver
 import android.os.*
+import android.support.v7.preference.PreferenceManager
 import android.telephony.SmsManager
 
 
@@ -75,15 +76,23 @@ class RelayService : Service() {
 
                 val pendingIntent = PendingIntent.getBroadcast(context, 775, alarmIntent, 0)
 
+                val defaultInterval = resources.getString(R.string.default_interval)
+                val intervalKey = resources.getString(R.string.interval_key)
+                val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
+                val intervalMins = sharedPreferences.getString(intervalKey, defaultInterval).toInt()
+
+
+                Log.d("HealthRelay","Wait for $intervalMins mins...")
+                Log.d("HealthRelay",Date().toString())
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                     Log.d("HealthRelay","Setting alarm M")
                     alarmManager.setExactAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP,
-                            SystemClock.elapsedRealtime() + 60 * 1000, pendingIntent)
+                            SystemClock.elapsedRealtime() + 1000 * 60 * intervalMins, pendingIntent)
                 }else{
                     Log.d("HealthRelay","Setting alarm < M")
                     alarmManager.setExact(AlarmManager.ELAPSED_REALTIME_WAKEUP,
-                            SystemClock.elapsedRealtime() + 60 * 1000, pendingIntent)
+                            SystemClock.elapsedRealtime() + 1000 * 60 * intervalMins, pendingIntent)
                 }
 
                 //val smsManager = SmsManager.getDefault()

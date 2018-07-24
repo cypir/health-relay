@@ -31,7 +31,9 @@ class MainActivity : AppCompatActivity() {
                 return@OnNavigationItemSelectedListener true
             }
             R.id.navigation_settings -> {
-                //message.setText(R.string.title_settings)
+                val ft = supportFragmentManager.beginTransaction()
+                ft.replace(R.id.fragment_container, SettingsFragment())
+                ft.commit()
                 return@OnNavigationItemSelectedListener true
             }
         }

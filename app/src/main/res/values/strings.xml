@@ -14,4 +14,9 @@
     <string name="button_deny">Deny</string>
     <string name="permission_contacts_rationale">Contacts are required for sending SMS</string>
     <string name="save">save</string>
+    <string name="title_activity_settings">Settings</string>
+
+    <!-- Prefs strings -->
+    <string name="default_interval">30</string>
+    <string name="interval_key">interval</string>
 </resources>
