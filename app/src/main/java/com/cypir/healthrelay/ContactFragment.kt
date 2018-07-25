@@ -5,6 +5,7 @@ import android.arch.lifecycle.Observer
 import android.arch.lifecycle.ViewModelProviders
 import android.content.ContentUris
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.provider.ContactsContract
 import android.provider.ContactsContract.Data
@@ -78,6 +79,7 @@ class ContactFragment : Fragment(), ContactAdapter.OnItemClickListener {
                                         Data.RAW_CONTACT_ID,
                                         Data.CONTACT_ID,
                                         Data._ID,
+                                        Data.PHOTO_THUMBNAIL_URI,
                                         StructuredName.DISPLAY_NAME_PRIMARY
                                 ),
                                 Data.MIMETYPE + "=?", arrayOf(HR_NOTIFY_MIMETYPE), null
@@ -96,14 +98,21 @@ class ContactFragment : Fragment(), ContactAdapter.OnItemClickListener {
 
                             //only add contact name if index is 0
                             if (indexOfContactId < 0) {
-                                hrContacts.add(
-                                        HRContact(
-                                                rawContactId = c.getString(c.getColumnIndex(Data.RAW_CONTACT_ID)),
-                                                displayName = c.getString(c.getColumnIndex(StructuredName.DISPLAY_NAME_PRIMARY)),
-                                                contactDataId = c.getString(c.getColumnIndex(Data._ID)),
-                                                contactId = c.getString(c.getColumnIndex(Data.CONTACT_ID))
-                                        )
+
+                                val hrContact = HRContact(
+                                        rawContactId = c.getString(c.getColumnIndex(Data.RAW_CONTACT_ID)),
+                                        displayName = c.getString(c.getColumnIndex(StructuredName.DISPLAY_NAME_PRIMARY)),
+                                        contactDataId = c.getString(c.getColumnIndex(Data._ID)),
+                                        contactId = c.getString(c.getColumnIndex(Data.CONTACT_ID)),
+                                        thumbnailUri = null
                                 )
+
+                                //set thumbnail URI, if present
+                                if(c.getString(c.getColumnIndex(Data.PHOTO_THUMBNAIL_URI)) != null){
+                                    hrContact.thumbnailUri = Uri.parse(c.getString(c.getColumnIndex(Data.PHOTO_THUMBNAIL_URI)))
+                                }
+
+                                hrContacts.add(hrContact)
                             }
                         }
                     }

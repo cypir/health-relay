@@ -30,6 +30,9 @@ class ContactAdapter(var context: Context, var contacts: List<HRContact>, var li
 
     override fun onBindViewHolder(holder: ContactHolder, position: Int) {
         holder.name.text = contacts[position].displayName
+        if(contacts[position].thumbnailUri != null){
+            holder.thumbnail.setImageURI(contacts[position].thumbnailUri)
+        }
 
         holder.bind(contacts[position], listener)
     }
@@ -37,6 +40,7 @@ class ContactAdapter(var context: Context, var contacts: List<HRContact>, var li
     //Holds the item information
     class ContactHolder(v: View) : RecyclerView.ViewHolder(v){
         val name = v.text_name
+        val thumbnail = v.image_contact
 
 
         fun bind(item : HRContact, listener : OnItemClickListener) {
