@@ -11,6 +11,7 @@ import android.provider.ContactsContract
 import android.provider.ContactsContract.Data
 import android.provider.ContactsContract.CommonDataKinds.StructuredName
 import android.support.v4.app.Fragment
+import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.LinearLayoutManager
 import android.util.Log
 import android.view.LayoutInflater
@@ -64,6 +65,11 @@ class ContactFragment : Fragment(), ContactAdapter.OnItemClickListener {
         contactAdapter = ContactAdapter(context!!, arrayListOf(), this)
         rv_contacts.adapter = contactAdapter
         rv_contacts.layoutManager = LinearLayoutManager(context)
+
+        val dividerItemDecoration = DividerItemDecoration(context,
+                LinearLayoutManager.VERTICAL)
+        rv_contacts.addItemDecoration(dividerItemDecoration)
+
 
         //create observer on HRContactData in order to update our contact list whenever we create/update/delete
         //HRContactData (eg. adding a contact data selection
