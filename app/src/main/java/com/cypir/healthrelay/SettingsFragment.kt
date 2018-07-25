@@ -25,7 +25,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         addPreferencesFromResource(R.xml.fragment_preferences)
 
-        val defaultInterval = resources.getString(R.string.default_interval) //TODO make this a constant in R
+        val defaultInterval = resources.getString(R.string.interval_default) //TODO make this a constant in R
         val intervalKey = resources.getString(R.string.interval_key)
 
         val editTextPreference = findPreference(intervalKey) as EditTextPreference

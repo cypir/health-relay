@@ -13,4 +13,14 @@
 
     </PreferenceCategory>
 
+    <PreferenceCategory
+        android:title="Debug">
+
+        <CheckBoxPreference
+            android:key="disable_notifications"
+            android:title="Disable Notifications"
+            android:defaultValue="false"/>
+
+    </PreferenceCategory>
+
 </PreferenceScreen>

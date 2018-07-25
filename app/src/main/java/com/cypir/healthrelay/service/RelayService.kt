@@ -77,7 +77,7 @@ class RelayService : Service() {
 
                 //set the interval timer once the screen turns off.
 
-                val defaultInterval = resources.getString(R.string.default_interval)
+                val defaultInterval = resources.getString(R.string.interval_default)
                 val intervalKey = resources.getString(R.string.interval_key)
                 val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
                 val intervalMins = sharedPreferences.getString(intervalKey, defaultInterval).toInt()

@@ -7,10 +7,12 @@ import android.app.Application
 import android.content.pm.PackageManager
 import android.provider.ContactsContract
 import android.provider.ContactsContract.Data
+import android.support.v7.preference.PreferenceManager
 import android.telephony.SmsManager
 import android.util.Log
 import com.cypir.healthrelay.AppDatabase
 import com.cypir.healthrelay.MainApplication
+import com.cypir.healthrelay.R
 import kotlinx.coroutines.experimental.android.UI
 import kotlinx.coroutines.experimental.launch
 import org.jetbrains.anko.coroutines.experimental.bg
@@ -45,6 +47,13 @@ class AlarmReceiver : BroadcastReceiver() {
             contactData.forEach { idString += "?," }
             idString = idString.dropLast(1)
 
+            val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
+            val notificationDisabled = sharedPreferences.getBoolean(
+                    context.resources.getString(R.string.disable_notifications_key),
+                    context.resources.getBoolean(R.bool.disable_notifications_default))
+
+            Log.w("HealthRelay","WARNING: Notifications are disabled")
+
             Log.d("HealthRelay",contactData.toString())
 
             //get existing list of contact methods
@@ -71,12 +80,16 @@ class AlarmReceiver : BroadcastReceiver() {
                         //all ids in contactData are enabled already, so we go ahead and send the SMS
                         Log.d("HealthRelay","SMS to $data1")
 
-//                        if (context.packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)) {
-//                            val smsManager = SmsManager.getDefault()
-//
-//                            smsManager.sendTextMessage(destinationAddress, scAddress, smsMessage,
-//                                    sentIntent, deliveryIntent)
-//                        }
+                        //if notifications are not disabled
+                        if(!notificationDisabled){
+                            if (context.packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)) {
+                                val smsManager = SmsManager.getDefault()
+
+                                smsManager.sendTextMessage(data1, null, "Hello from health relay",
+                                        null, null)
+                            }
+                        }
+
                     }
                 }
 
