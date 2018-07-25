@@ -26,4 +26,7 @@ interface HRContactDataDao {
 
     @Query("select * from Contact_Data")
     fun getAllHRContactDataSync() : List<HRContactData>
+
+    @Query("select id from Contact_data where isEnabled = 1")
+    fun getAllEnabledHRContactDataIdsSync() : List<Long>
 }

@@ -60,21 +60,22 @@ class RelayService : Service() {
     private var lastReset = Date()
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+
+        val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
+
+        val alarmIntent = Intent(application, AlarmReceiver::class.java)
+        val pendingIntent = PendingIntent.getBroadcast(applicationContext, 775, alarmIntent, 0)
+
         //receiver for when the screen is turned off.
         //When screen is turned off, schedule an alarm x minutes into the future, where x
         //is the interval that we set.
         registerReceiver(object : BroadcastReceiver() {
-
             override fun onReceive(context: Context, intent: Intent) {
                 //when the screen turns off,
                 //am.setExactAndAllowWhileIdle()
                 Log.d("HealthRelay","The screen is off")
 
                 //set the interval timer once the screen turns off.
-                val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
-                val alarmIntent = Intent(application, AlarmReceiver::class.java)
-
-                val pendingIntent = PendingIntent.getBroadcast(context, 775, alarmIntent, 0)
 
                 val defaultInterval = resources.getString(R.string.default_interval)
                 val intervalKey = resources.getString(R.string.interval_key)
@@ -95,10 +96,6 @@ class RelayService : Service() {
                             SystemClock.elapsedRealtime() + 1000 * 60 * intervalMins, pendingIntent)
                 }
 
-                //val smsManager = SmsManager.getDefault()
-//                smsManager.sendTextMessage("+17039467550", null, "Message from health relay",
-//                        null, null)
-
             }
         }, IntentFilter(Intent.ACTION_SCREEN_OFF))
 
@@ -110,6 +107,9 @@ class RelayService : Service() {
             override fun onReceive(context: Context, intent: Intent) {
                 //This happens when the screen is turned on and screen lock deactivated
                 Log.d("HealthRelay","Screen has come back on")
+
+                //we need to cancel the alarm
+                alarmManager.cancel(pendingIntent)
             }
         }, IntentFilter(Intent.ACTION_SCREEN_ON))
 

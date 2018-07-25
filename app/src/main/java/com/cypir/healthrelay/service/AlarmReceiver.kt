@@ -4,7 +4,10 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.app.Application
+import android.content.pm.PackageManager
 import android.provider.ContactsContract
+import android.provider.ContactsContract.Data
+import android.telephony.SmsManager
 import android.util.Log
 import com.cypir.healthrelay.AppDatabase
 import com.cypir.healthrelay.MainApplication
@@ -31,17 +34,55 @@ class AlarmReceiver : BroadcastReceiver() {
         Log.d("HealthRelay", Date().toString())
 
         launch(UI){
-            val contactData = bg{ appDb.hrContactDataDao().getAllHRContactDataSync() }.await()
+            val contactData = bg{ appDb.hrContactDataDao().getAllEnabledHRContactDataIdsSync() }.await()
+            val contactDataStr = contactData.map { it.toString() }
+
+            //count how many contact data points we have. This is the number of ? we need for the selection
+            //params
+
+            var idString = "";
+
+            contactData.forEach { idString += "?," }
+            idString = idString.dropLast(1)
 
             Log.d("HealthRelay",contactData.toString())
 
-            //go through each contact and send an sms
-            //TODO account for if interval is empty
-            contactData.forEach {
-                when(it.mimetype){
-                    ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE -> Log.d("HealthRelay",it.id.toString())
+            //get existing list of contact methods
+            val cr = context.contentResolver
+            val uri = Data.CONTENT_URI
+
+            Log.d("HealthRelay",Data._ID + " IN (" + idString + ")")
+
+            val c = cr.query(uri, arrayOf
+            (
+                    Data.DATA1,
+                    Data.MIMETYPE
+            ),
+                    Data._ID + " IN (" + idString + ")",
+                    contactDataStr.toTypedArray(), null)
+
+            while(c.moveToNext()){
+                val data1 = c.getString(c.getColumnIndex(Data.DATA1))
+                val mimetype =  c.getString(c.getColumnIndex(Data.MIMETYPE))
+
+                //if the mimetype is the phone type, we send SMS
+                when(mimetype) {
+                    ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE -> {
+                        //all ids in contactData are enabled already, so we go ahead and send the SMS
+                        Log.d("HealthRelay","SMS to $data1")
+
+//                        if (context.packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)) {
+//                            val smsManager = SmsManager.getDefault()
+//
+//                            smsManager.sendTextMessage(destinationAddress, scAddress, smsMessage,
+//                                    sentIntent, deliveryIntent)
+//                        }
+                    }
                 }
+
             }
+
+            c.close()
         }
     }
 }
