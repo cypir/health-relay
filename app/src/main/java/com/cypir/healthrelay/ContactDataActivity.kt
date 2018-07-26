@@ -28,7 +28,6 @@ import android.content.ContentProviderOperation
 import pub.devrel.easypermissions.AfterPermissionGranted
 import pub.devrel.easypermissions.EasyPermissions
 
-
 class ContactDataActivity : AppCompatActivity(), ContactDataAdapter.OnDataEnabled {
     lateinit var phoneDataAdapter : ContactDataAdapter
     lateinit var emailDataAdapter : ContactDataAdapter
@@ -124,8 +123,6 @@ class ContactDataActivity : AppCompatActivity(), ContactDataAdapter.OnDataEnable
     override fun onOptionsItemSelected(item: MenuItem) = when (item.itemId) {
         //when a user saves their notification selection
         R.id.add_contact_save -> {
-            Toast.makeText(this, "add_contact_save", Toast.LENGTH_LONG).show()
-
             //get the in memory selections from the adapters
             val phones = phoneDataAdapter.HRContactData
             val emails = emailDataAdapter.HRContactData
@@ -184,7 +181,17 @@ class ContactDataActivity : AppCompatActivity(), ContactDataAdapter.OnDataEnable
             //add hrcontactdata to the db
             launch(UI){
                 //now add the combined list to the db
-                bg { vm.saveHRContactData(combined) }.await()
+                try{
+                    bg { vm.saveHRContactData(combined) }.await()
+                    Toast.makeText(this@ContactDataActivity,
+                            this@ContactDataActivity.resources.getString(R.string.contact_data_saved),
+                            Toast.LENGTH_LONG).show()
+                    //after we save, we should close this activity.
+                    this@ContactDataActivity.finish()
+                }catch(e : Exception){
+                    Log.e("HealthRelay",e.toString())
+                }
+
             }
 
             true

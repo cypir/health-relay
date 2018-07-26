@@ -20,19 +20,40 @@ import android.content.SharedPreferences
  * A simple [Fragment] subclass.
  *
  */
-class SettingsFragment : PreferenceFragmentCompat() {
+class SettingsFragment : PreferenceFragmentCompat(), SharedPreferences.OnSharedPreferenceChangeListener {
+    override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String) {
+        val defaultInterval = resources.getString(R.string.interval_default)
+        val intervalKey = resources.getString(R.string.interval_key)
+
+        if (key == intervalKey) {
+            val connectionPref = findPreference(key)
+            // Set summary to be the user-description for the selected value
+            connectionPref.summary = sharedPreferences?.getString(key, defaultInterval)
+        }
+    }
+
     override fun onCreatePreferencesFix(savedInstanceState: Bundle?, rootKey: String?) {
 
         addPreferencesFromResource(R.xml.fragment_preferences)
 
-        val defaultInterval = resources.getString(R.string.interval_default) //TODO make this a constant in R
+        val defaultInterval = resources.getString(R.string.interval_default)
         val intervalKey = resources.getString(R.string.interval_key)
 
         val editTextPreference = findPreference(intervalKey) as EditTextPreference
         val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
 
         editTextPreference.summary = sharedPreferences.getString(intervalKey, defaultInterval)
+    }
 
-        //TODO make a listener that updates the summary on change
+    override fun onResume() {
+        super.onResume()
+        preferenceScreen.sharedPreferences
+                .registerOnSharedPreferenceChangeListener(this)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        preferenceScreen.sharedPreferences
+                .unregisterOnSharedPreferenceChangeListener(this)
     }
 }

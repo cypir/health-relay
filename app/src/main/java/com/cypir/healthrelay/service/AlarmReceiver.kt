@@ -42,7 +42,7 @@ class AlarmReceiver : BroadcastReceiver() {
             //count how many contact data points we have. This is the number of ? we need for the selection
             //params
 
-            var idString = "";
+            var idString = ""
 
             contactData.forEach { idString += "?," }
             idString = idString.dropLast(1)
@@ -52,7 +52,9 @@ class AlarmReceiver : BroadcastReceiver() {
                     context.resources.getString(R.string.disable_notifications_key),
                     context.resources.getBoolean(R.bool.disable_notifications_default))
 
-            Log.w("HealthRelay","WARNING: Notifications are disabled")
+            if(notificationDisabled){
+                Log.w("HealthRelay","WARNING: Notifications are disabled")
+            }
 
             Log.d("HealthRelay",contactData.toString())
 

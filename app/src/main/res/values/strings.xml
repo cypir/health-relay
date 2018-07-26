@@ -8,13 +8,13 @@
     <string name="channel_name">healthrelaychannel</string>
     <string name="channel_description">healthrelaydescription</string>
 
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="button_allow">Allow</string>
     <string name="button_deny">Deny</string>
     <string name="permission_contacts_rationale">Contacts are required for sending SMS</string>
     <string name="save">save</string>
     <string name="title_activity_settings">Settings</string>
+
+    <string name="contact_data_saved">Contact data saved!</string>
 
     <!-- Prefs strings -->
     <string name="interval_default">30</string>
