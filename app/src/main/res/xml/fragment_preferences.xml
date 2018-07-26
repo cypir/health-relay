@@ -3,11 +3,11 @@
     android:layout_height="match_parent" android:layout_width="match_parent">
 
     <PreferenceCategory
-        android:title="Interval">
+        android:title="Contact Notification">
 
         <EditTextPreference
             android:key="interval"
-            android:title="Interval before notifying"
+            android:title="Interval before notifying contacts (minutes)"
             android:defaultValue="30"
             android:numeric="integer"/>
 

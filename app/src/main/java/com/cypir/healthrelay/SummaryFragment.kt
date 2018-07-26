@@ -11,12 +11,6 @@ import android.view.ViewGroup
 import com.cypir.healthrelay.viewmodel.MainViewModel
 import kotlinx.android.synthetic.main.fragment_summary.*
 
-
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
-
 /**
  * A simple [Fragment] subclass.
  * Activities that contain this fragment must implement the
