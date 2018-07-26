@@ -2,7 +2,6 @@ package com.cypir.healthrelay
 
 import android.Manifest
 import android.arch.lifecycle.ViewModelProviders
-import android.content.ContentResolver
 import android.net.Uri
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
@@ -223,13 +222,14 @@ class ContactDataActivity : AppCompatActivity(), ContactDataAdapter.OnDataEnable
         //list of phone numbers, list of emails, etc go in here
         val dataList = arrayListOf<HRContactData>()
         val cachedHRContactData = HashMap<Long, List<HRContactData>>()
+        val dataSet = HashSet<String>()
 
         return async(UI) {
 
             if(c != null){
                 //iterate through each Data entry for each top level aggregated contract
                 while (c.moveToNext()) {
-                    val data = c.getString(c.getColumnIndex(Data.DATA1))
+                    val data = c.getString(c.getColumnIndex(Data.DATA1)) //TODO check if data is string
                     val dataId = c.getLong(c.getColumnIndex(Data._ID))
                     val mimetype = c.getString(c.getColumnIndex(Data.MIMETYPE))
                     val rawContactId = c.getLong(c.getColumnIndex(Data.RAW_CONTACT_ID))
@@ -244,7 +244,7 @@ class ContactDataActivity : AppCompatActivity(), ContactDataAdapter.OnDataEnable
                     if(cachedHRContactData[rawContactId] == null){
 
                         //get additional data that we stored about this particular raw contact
-                        val hrContactData = bg { vm.getHRContactData(rawContactId) }.await()
+                        val hrContactData = bg { vm.getHRContactDataByRawContactId(rawContactId) }.await()
 
                         //if we do have some results, cache it
                         if(hrContactData != null){
@@ -255,14 +255,25 @@ class ContactDataActivity : AppCompatActivity(), ContactDataAdapter.OnDataEnable
                         }
                     }
 
-                    //filter through the cached list. If we find a matching Data._ID, use it to populate the isEnabled field.
-                    //We have @Ignore fields on HRContactData so the UI can show the actual data field
-                    val hrContactData = cachedHRContactData[rawContactId]?.find { it.id == dataId }
+                    /**
+                     * Issue #6. If an app is installed that uses an existing contact data (eg, WhatsApp and phone numbers),
+                     * that phone number will be displayed multiple times on the selection list. To prevent duplicates,
+                     * we store the data in a hashset, which we then check with before adding it to the list of selectable
+                     * contact information. This will effectively remove duplicates.
+                     */
+                    if(!dataSet.contains(data)){
+                        //filter through the cached list. If we find a matching Data._ID, use it to populate the isEnabled field.
+                        //We have @Ignore fields on HRContactData so the UI can show the actual data field
+                        val hrContactData = cachedHRContactData[rawContactId]?.find { it.id == dataId }
 
-                    if(hrContactData != null){
-                        dataList.add(HRContactData(id=dataId, mimetype=mimetype, data=data, rawContactId = rawContactId, isEnabled=hrContactData.isEnabled))
-                    }else{
-                        dataList.add(HRContactData(id=dataId, mimetype=mimetype, data=data, rawContactId = rawContactId))
+                        if(hrContactData != null){
+                            dataList.add(HRContactData(id=dataId, mimetype=mimetype, data=data, rawContactId = rawContactId, isEnabled=hrContactData.isEnabled))
+                        }else{
+                            dataList.add(HRContactData(id=dataId, mimetype=mimetype, data=data, rawContactId = rawContactId))
+                        }
+
+                        //add this data to the dataSet
+                        dataSet.add(data)
                     }
                 }
 

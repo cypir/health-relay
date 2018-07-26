@@ -54,9 +54,9 @@ class ContactDataViewModel(application : Application) : AndroidViewModel(applica
     /**
      * Gets the stored contact info for a particular contact
      */
-    fun getHRContactData(id: Long) : List<HRContactData>?{
+    fun getHRContactDataByRawContactId(id: Long) : List<HRContactData>?{
         val list : List<HRContactData>? = try{
-            appDb.hrContactDataDao().getHRContactDataByContactId(id)
+            appDb.hrContactDataDao().getHRContactDataByRawContactId(id)
         }catch(ex : Exception){
             Log.d("HealthRelay","Ran into an error")
             null

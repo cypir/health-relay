@@ -19,7 +19,7 @@ interface HRContactDataDao {
     fun insertHRContactData(list : List<HRContactData>)
 
     @Query("select * from Contact_Data where raw_contact_id = :rawContactId")
-    fun getHRContactDataByContactId(rawContactId : Long) : List<HRContactData> ?
+    fun getHRContactDataByRawContactId(rawContactId : Long) : List<HRContactData> ?
 
     @Query("select * from Contact_Data")
     fun getAllHRContactData() : LiveData<List<HRContactData>>
