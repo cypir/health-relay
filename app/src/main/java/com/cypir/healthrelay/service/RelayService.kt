@@ -129,37 +129,41 @@ class RelayService : Service() {
                 .setContentText("Health Relay Active")
 
         val intent = Intent(this, MainActivity::class.java)
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-        // resultIntent.putExtra("coachingSessionId",session.id)
+        intent.action = Intent.ACTION_MAIN;
+        intent.addCategory(Intent.CATEGORY_LAUNCHER);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
 
         //PendingIntent.FLAG_CANCEL_CURRENT resumes activity
         val pendingIntent = PendingIntent.getActivity(this, 0, intent,
-                PendingIntent.FLAG_ONE_SHOT)
+                PendingIntent.FLAG_UPDATE_CURRENT)
 
         mBuilder.setContentIntent(pendingIntent)
 
         return mBuilder.build()
     }
 
+    /**
+     * Update should show last time a notification was sent out
+     */
     private fun updateNotification() {
 
-        val intent = Intent(this, MainActivity::class.java)
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-        // resultIntent.putExtra("coachingSessionId",session.id)
-
-        //PendingIntent.FLAG_CANCEL_CURRENT resumes activity
-        val pendingIntent = PendingIntent.getActivity(this, 0, intent,
-                PendingIntent.FLAG_ONE_SHOT)
-
-        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_record_voice_over_black_24dp)
-                .setContentTitle("Health Relay")
-                .setContentText("Iterations: $iterations Last Reset: $lastReset")
-                .setContentIntent(pendingIntent)
-
-        notificationManager.notify(
-                NOTIFICATION_ID,
-                builder.build())
+//        val intent = Intent(this, MainActivity::class.java)
+//        //intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+//        // resultIntent.putExtra("coachingSessionId",session.id)
+//
+//        //PendingIntent.FLAG_CANCEL_CURRENT resumes activity
+////        val pendingIntent = PendingIntent.getActivity(this, 0, intent,
+////                PendingIntent.FLAG_ONE_SHOT)
+//
+//        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
+//                .setSmallIcon(R.drawable.ic_record_voice_over_black_24dp)
+//                .setContentTitle("Health Relay")
+//                .setContentText("Iterations: $iterations Last Reset: $lastReset")
+//                //.setContentIntent(pendingIntent)
+//
+//        notificationManager.notify(
+//                NOTIFICATION_ID,
+//                builder.build())
     }
 
 
