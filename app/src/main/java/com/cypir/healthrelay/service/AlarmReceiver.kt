@@ -1,10 +1,12 @@
 package com.cypir.healthrelay.service
 
+import android.Manifest
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.app.Application
 import android.content.pm.PackageManager
+import android.os.Build
 import android.provider.ContactsContract
 import android.provider.ContactsContract.Data
 import android.support.v7.preference.PreferenceManager
@@ -87,8 +89,14 @@ class AlarmReceiver : BroadcastReceiver() {
                             if (context.packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)) {
                                 val smsManager = SmsManager.getDefault()
 
+                                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
+                                    val textPermitted = context.checkSelfPermission(Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED;
+                                    Log.d("HealthRelay","Text permitted ${textPermitted.toString()}")
+                                }
+
                                 smsManager.sendTextMessage(data1, null, "Hello from health relay",
                                         null, null)
+                                Log.d("HealthRelay","SMS to $data1 SENT")
                             }
                         }
 

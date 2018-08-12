@@ -23,41 +23,18 @@ import android.telephony.SmsManager
 
 
 /**
- * Foreground service that checks the accelerometer every minute for 10 seconds to see if
- * any movement is happening.
- *
- * 1. If movement is happening, reset the time to send the SMS by + interval.
- * 2. If movement is not happening, do nothing.
- *
- * If the time to send SMS message is hit or passed, then we send the SMS message.
- *
- * 1. Get contacts via room and then send SMS to each one of those contacts.
+ * Foreground service that monitors for screen on and off to determine if a user is idle or not. Uses
+ * setExactAndAllowWhileIdle to ensure that message gets delivered at the proper time.
  */
 class RelayService : Service() {
     @Inject
-    lateinit var appDb : AppDatabase
-
-    @Inject
     lateinit var app : Application
-
-    lateinit var sensorManager : SensorManager
-    lateinit var sensor : Sensor
 
     private val NOTIFICATION_ID = 1
     val CHANNEL_ID = "health_relay_channel"
 
-    private var timer : CountDownTimer? = null
-    private var msRemaining = 0L
-
-    //the interval is minutes to MS
-    private val interval = 1 * 60 * 1000L
-
-    //store iterations
-    private var iterations = 0
-
     private lateinit var notificationManager : NotificationManagerCompat
 
-    private var lastReset = Date()
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
 
@@ -129,11 +106,7 @@ class RelayService : Service() {
                 .setContentText("Health Relay Active")
 
         val intent = Intent(this, MainActivity::class.java)
-        intent.action = Intent.ACTION_MAIN;
-        intent.addCategory(Intent.CATEGORY_LAUNCHER);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-
-        //PendingIntent.FLAG_CANCEL_CURRENT resumes activity
+        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
         val pendingIntent = PendingIntent.getActivity(this, 0, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT)
 

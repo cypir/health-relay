@@ -31,7 +31,7 @@ class ContactDataActivity : AppCompatActivity(), ContactDataAdapter.OnDataEnable
     lateinit var phoneDataAdapter : ContactDataAdapter
     lateinit var emailDataAdapter : ContactDataAdapter
 
-    var hasSmsPerm = false
+    var hasDataPerms = false
 
     lateinit var vm : ContactDataViewModel
 
@@ -39,25 +39,25 @@ class ContactDataActivity : AppCompatActivity(), ContactDataAdapter.OnDataEnable
         //check mimetype
         when(mimetype){
             Phone.CONTENT_ITEM_TYPE -> {
-                getSmsPerm()
-                return hasSmsPerm
+                getDataPerms()
+                return hasDataPerms
             }
         }
         return true
     }
 
     @AfterPermissionGranted(2)
-    fun getSmsPerm(){
-        val perms = arrayOf(Manifest.permission.SEND_SMS)
+    fun getDataPerms(){
+        val perms = arrayOf(Manifest.permission.SEND_SMS, Manifest.permission.READ_PHONE_STATE)
 
         val hasPermissions = EasyPermissions.hasPermissions(this,
                 *perms)
 
         if (hasPermissions){
-            hasSmsPerm = true
+            hasDataPerms = true
         }else{
             EasyPermissions.requestPermissions(this,
-                    "We need to be able to send SMS in order to notify this contact.",
+                    "We need to be able to send SMS and read phone state in order to notify this contact.",
                     2,
                     *perms
             )
@@ -115,84 +115,95 @@ class ContactDataActivity : AppCompatActivity(), ContactDataAdapter.OnDataEnable
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         val inflater = menuInflater
-        inflater.inflate(R.menu.menu_add_contact, menu)
+        inflater.inflate(R.menu.menu_contact_data, menu)
         return true
+    }
+
+    private fun saveContact(){
+        val phones = phoneDataAdapter.HRContactData
+        val emails = emailDataAdapter.HRContactData
+
+        val combined = phones + emails
+
+        Log.d("HealthRelay",phones.toString())
+        Log.d("HealthRelay",emails.toString())
+
+        //iterate through the user selections in the phones and emails lists. Get the raw_contact_ids.
+        //we will need to verify one by one whether or not each of these raw_contact_ids has a
+        //health relay mimetype row.
+
+        val existingMimeRows = HashMap<Long, Boolean>()
+
+        //first, figure out which raw contacts already have the HR mimetype associated
+        val existingMimeC = contentResolver.query(
+                Data.CONTENT_URI,
+                arrayOf(
+                        Data._ID,
+                        Data.RAW_CONTACT_ID
+                ),
+                Data.MIMETYPE + "= ?",
+                arrayOf(vm.MIMETYPE_HRNOTIFY),
+                null)
+
+        //store the RAW_CONTACT_ID in the map so we know if a user already has an HR mimetype row
+        while(existingMimeC.moveToNext()){
+            existingMimeRows[existingMimeC.getLong(existingMimeC.getColumnIndex(Data.RAW_CONTACT_ID))] = true
+        }
+
+        existingMimeC.close()
+
+        //now iterate through the list of user selected contacts, adding to the list of in memory mime
+        //rows whenever we don't see a match. If we don't see a match, make sure to add to the batch transaction.
+        val ops = ArrayList<ContentProviderOperation>()
+
+        combined.forEach {
+            //if we don't currently have this mime row or don't intend to add it yet, then we must add it
+            if(existingMimeRows[it.rawContactId] == null){
+                //add the mime type to the batch transaction
+                ops.add(ContentProviderOperation.newInsert(Data.CONTENT_URI)
+                        .withValue(Data.RAW_CONTACT_ID, it.rawContactId)
+                        .withValue(Data.MIMETYPE, vm.MIMETYPE_HRNOTIFY)
+                        .withValue(Data.DATA1, true)
+                        .build())
+
+                //add to the existingMimeRows (since we intend to add it, we don't want to do a duplicate insert)
+                existingMimeRows[it.rawContactId] = true
+            }
+        }
+
+        //add mimetypes to the db
+        contentResolver.applyBatch(ContactsContract.AUTHORITY, ops)
+
+        //add hrcontactdata to the db
+        launch(UI){
+            //now add the combined list to the db
+            try{
+                bg { vm.saveHRContactData(combined) }.await()
+                Toast.makeText(this@ContactDataActivity,
+                        this@ContactDataActivity.resources.getString(R.string.contact_data_saved),
+                        Toast.LENGTH_LONG).show()
+                //after we save, we should close this activity.
+                this@ContactDataActivity.finish()
+            }catch(e : Exception){
+                Log.e("HealthRelay",e.toString())
+            }
+
+        }
+    }
+
+    private fun removeContact(){
+
     }
 
     override fun onOptionsItemSelected(item: MenuItem) = when (item.itemId) {
         //when a user saves their notification selection
-        R.id.add_contact_save -> {
+        R.id.contact_save -> {
             //get the in memory selections from the adapters
-            val phones = phoneDataAdapter.HRContactData
-            val emails = emailDataAdapter.HRContactData
-
-            val combined = phones + emails
-
-            Log.d("HealthRelay",phones.toString())
-            Log.d("HealthRelay",emails.toString())
-
-            //iterate through the user selections in the phones and emails lists. Get the raw_contact_ids.
-            //we will need to verify one by one whether or not each of these raw_contact_ids has a
-            //health relay mimetype row.
-
-            val existingMimeRows = HashMap<Long, Boolean>()
-
-            //first, figure out which raw contacts already have the HR mimetype associated
-            val existingMimeC = contentResolver.query(
-                    Data.CONTENT_URI,
-                    arrayOf(
-                            Data._ID,
-                            Data.RAW_CONTACT_ID
-                    ),
-                     Data.MIMETYPE + "= ?",
-                    arrayOf(vm.MIMETYPE_HRNOTIFY),
-                    null)
-
-            //store the RAW_CONTACT_ID in the map so we know if a user already has an HR mimetype row
-            while(existingMimeC.moveToNext()){
-                existingMimeRows[existingMimeC.getLong(existingMimeC.getColumnIndex(Data.RAW_CONTACT_ID))] = true
-            }
-
-            existingMimeC.close()
-
-            //now iterate through the list of user selected contacts, adding to the list of in memory mime
-            //rows whenever we don't see a match. If we don't see a match, make sure to add to the batch transaction.
-            val ops = ArrayList<ContentProviderOperation>()
-
-            combined.forEach {
-                //if we don't currently have this mime row or don't intend to add it yet, then we must add it
-                if(existingMimeRows[it.rawContactId] == null){
-                    //add the mime type to the batch transaction
-                    ops.add(ContentProviderOperation.newInsert(Data.CONTENT_URI)
-                            .withValue(Data.RAW_CONTACT_ID, it.rawContactId)
-                            .withValue(Data.MIMETYPE, vm.MIMETYPE_HRNOTIFY)
-                            .withValue(Data.DATA1, true)
-                            .build())
-
-                    //add to the existingMimeRows (since we intend to add it, we don't want to do a duplicate insert)
-                    existingMimeRows[it.rawContactId] = true
-                }
-            }
-
-            //add mimetypes to the db
-            contentResolver.applyBatch(ContactsContract.AUTHORITY, ops)
-
-            //add hrcontactdata to the db
-            launch(UI){
-                //now add the combined list to the db
-                try{
-                    bg { vm.saveHRContactData(combined) }.await()
-                    Toast.makeText(this@ContactDataActivity,
-                            this@ContactDataActivity.resources.getString(R.string.contact_data_saved),
-                            Toast.LENGTH_LONG).show()
-                    //after we save, we should close this activity.
-                    this@ContactDataActivity.finish()
-                }catch(e : Exception){
-                    Log.e("HealthRelay",e.toString())
-                }
-
-            }
-
+            saveContact()
+            true
+        }
+        R.id.contact_remove -> {
+            removeContact()
             true
         }
         else -> {
