@@ -66,13 +66,15 @@ class AlarmReceiver : BroadcastReceiver() {
 
             Log.d("HealthRelay",Data._ID + " IN (" + idString + ")")
 
-            val c = cr.query(uri, arrayOf
-            (
+            val c = cr.query(uri,
+                arrayOf(
                     Data.DATA1,
                     Data.MIMETYPE
-            ),
-                    Data._ID + " IN (" + idString + ")",
-                    contactDataStr.toTypedArray(), null)
+                ),
+                Data._ID + " IN (" + idString + ")",
+                contactDataStr.toTypedArray(),
+                null
+            )
 
             while(c.moveToNext()){
                 val data1 = c.getString(c.getColumnIndex(Data.DATA1))
@@ -89,14 +91,8 @@ class AlarmReceiver : BroadcastReceiver() {
                             if (context.packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)) {
                                 val smsManager = SmsManager.getDefault()
 
-                                if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M){
-                                    val textPermitted = context.checkSelfPermission(Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED;
-                                    Log.d("HealthRelay","Text permitted ${textPermitted.toString()}")
-                                }
-
                                 smsManager.sendTextMessage(data1, null, "Hello from health relay",
                                         null, null)
-                                Log.d("HealthRelay","SMS to $data1 SENT")
                             }
                         }
 

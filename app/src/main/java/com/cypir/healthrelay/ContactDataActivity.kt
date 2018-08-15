@@ -71,7 +71,7 @@ class ContactDataActivity : AppCompatActivity(), ContactDataAdapter.OnDataEnable
         vm = ViewModelProviders.of(this).get(ContactDataViewModel::class.java)
 
         val extras = intent.extras
-        val contactUri = extras.getParcelable<Uri>("contactUri")
+        vm.contactUri = extras.getParcelable<Uri>("contactUri")
         vm.hrMimeId = extras.getString("hrMimeId")
 
         //initialize empty adapters
@@ -87,7 +87,7 @@ class ContactDataActivity : AppCompatActivity(), ContactDataAdapter.OnDataEnable
 
             //gets contact cursor
             val cursor = bg {
-                this@ContactDataActivity.contentResolver?.query(contactUri, null, null, null, null)
+                this@ContactDataActivity.contentResolver?.query(vm.contactUri, null, null, null, null)
             }.await()
 
             if(cursor != null) {
@@ -193,6 +193,46 @@ class ContactDataActivity : AppCompatActivity(), ContactDataAdapter.OnDataEnable
 
     private fun removeContact(){
 
+        launch(UI){
+            //get all raw_contact_ids associated with this contact that have this mimetype
+            val rawContactIdList = arrayListOf<Long>()
+
+            val existingMimeC = bg { contentResolver.query(
+                    Data.CONTENT_URI,
+                    arrayOf(
+                            Data.DISPLAY_NAME, //TODO: just for debug, comment out
+                            Data.DATA1, //TODO: just for debug, comment out
+                            Data.RAW_CONTACT_ID
+                    ),
+                    Data.MIMETYPE + "= ? and " + Data.CONTACT_ID + "=?",
+                    arrayOf(vm.MIMETYPE_HRNOTIFY, vm.contactId.toString()),
+                    null) }.await()
+
+            //we can pass the raw contacts list directly in, as duplicates wont affect in clause
+            while(existingMimeC.moveToNext()){
+                rawContactIdList.add(existingMimeC.getLong(existingMimeC.getColumnIndex(Data.RAW_CONTACT_ID)))
+                //Log.d("HealthRelay",existingMimeC.getString(0) + ": " + existingMimeC.getString(1))
+            }
+
+            existingMimeC.close()
+
+            //remove all HR mime type rows for each raw contact associated with this Contact
+            val ops = ArrayList<ContentProviderOperation>()
+
+            ops.add(ContentProviderOperation.newDelete(Data.CONTENT_URI)
+                    .withSelection(
+                            Data.CONTACT_ID + "=? and " + Data.MIMETYPE + "=?",
+                            arrayOf(vm.contactId.toString(), vm.MIMETYPE_HRNOTIFY)
+                    )
+                    .build())
+            contentResolver.applyBatch(ContactsContract.AUTHORITY, ops)
+
+            //then remove db entries from our app db
+            bg {vm.removeHrContactData(rawContactIdList)}
+        }
+
+
+
     }
 
     override fun onOptionsItemSelected(item: MenuItem) = when (item.itemId) {
@@ -252,6 +292,8 @@ class ContactDataActivity : AppCompatActivity(), ContactDataAdapter.OnDataEnable
 
                     //if we haven't cached this raw_contact's info yet, then get HR info from db and cache
                     //we cache because a single raw contact may have multiple Data entries (phone, email).
+                    //this reduces the number of times we pull from our HR db since we are iterating through
+                    //data rows
                     if(cachedHRContactData[rawContactId] == null){
 
                         //get additional data that we stored about this particular raw contact
@@ -275,6 +317,7 @@ class ContactDataActivity : AppCompatActivity(), ContactDataAdapter.OnDataEnable
                     if(!dataSet.contains(data)){
                         //filter through the cached list. If we find a matching Data._ID, use it to populate the isEnabled field.
                         //We have @Ignore fields on HRContactData so the UI can show the actual data field
+                        //the presence of hrContactData is enough to make it enabled.
                         val hrContactData = cachedHRContactData[rawContactId]?.find { it.id == dataId }
 
                         if(hrContactData != null){

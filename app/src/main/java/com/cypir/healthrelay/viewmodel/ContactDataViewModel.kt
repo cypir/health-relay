@@ -2,11 +2,14 @@ package com.cypir.healthrelay.viewmodel
 
 import android.app.Application
 import android.arch.lifecycle.AndroidViewModel
+import android.net.Uri
 import android.util.Log
 import com.cypir.healthrelay.AppDatabase
 import com.cypir.healthrelay.MainApplication
 import com.cypir.healthrelay.entity.HRContactData
+import kotlinx.coroutines.experimental.Deferred
 import kotlinx.coroutines.experimental.android.UI
+import kotlinx.coroutines.experimental.async
 import org.jetbrains.anko.coroutines.experimental.bg
 import javax.inject.Inject
 import kotlinx.coroutines.experimental.launch
@@ -20,6 +23,7 @@ class ContactDataViewModel(application : Application) : AndroidViewModel(applica
     lateinit var appDb : AppDatabase
     var contactId : Long = -1
     lateinit var contactName : String
+    lateinit var contactUri : Uri
 
     //this is the health relay data id for the MIMETYPE_HRNOTIFY row.
     var hrMimeId : String? = null
@@ -48,6 +52,13 @@ class ContactDataViewModel(application : Application) : AndroidViewModel(applica
                 appDb.hrContactDataDao().insertHRContactData(list)
             }.await()
         }
+    }
+
+    fun removeHrContactData(list : List<Long>) : Deferred<Any>{
+        return async(UI){
+            bg {appDb.hrContactDataDao().deleteHRContactData(list)}.await()
+        }
+
     }
 
     /**

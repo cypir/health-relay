@@ -6,7 +6,7 @@ import android.arch.persistence.room.*
  * Stores the individual contact methods
  */
 @Entity(
-    tableName = "Contact_Data"
+    tableName = "HR_Contact_Data"
 )
 data class HRContactData (
         /*
