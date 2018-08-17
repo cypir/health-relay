@@ -32,6 +32,8 @@ class ContactAdapter(var context: Context, var contacts: List<HRContact>, var li
         holder.name.text = contacts[position].displayName
         if(contacts[position].thumbnailUri != null){
             holder.thumbnail.setImageURI(contacts[position].thumbnailUri)
+        }else{
+            holder.thumbnail.setImageResource(android.R.color.transparent)
         }
 
         holder.bind(contacts[position], listener)
